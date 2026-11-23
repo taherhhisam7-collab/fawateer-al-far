@@ -21,7 +21,7 @@ function Table({ title, headers, keys, rows, totals }) {
   </>;
 }
 
-export default function InvoiceDetailModal({ invoice, onClose, onUpdate, onPrint, onEdit, notify }) {
+export default function InvoiceDetailModal({ invoice, onClose, onUpdate, onPrint, onEdit, notify, viewOnly = false }) {
   if (!invoice) return null;
   const share = () => shareWhatsApp([
     `*تفاصيل فواتير الفرع - ${invoice.code}*`,
@@ -38,7 +38,9 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate, onPrint
   };
 
   return <Modal wide title={`تفاصيل الفاتورة ${invoice.code}`} onClose={onClose}
-    footer={<>
+    footer={viewOnly ? (
+      <button className="btn btn-ghost" onClick={onClose}><X size={15} /> إغلاق</button>
+    ) : <>
       <button className="btn btn-light" onClick={() => download(`/exports/invoice/${invoice.id}.xlsx`, `fatura-${invoice.code}.xlsx`)
         .catch((e) => notify(e.message, 'error'))}><FileSpreadsheet size={15} /> Excel</button>
       <button className="btn btn-light" onClick={() => onPrint(invoice)}><Printer size={15} /> طباعة / PDF</button>

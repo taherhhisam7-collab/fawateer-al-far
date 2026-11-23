@@ -48,11 +48,13 @@ function buildFilter(filters = {}, user) {
   return { where: clauses.length ? 'WHERE ' + clauses.join(' AND ') : '', params };
 }
 
-const SELECT = `SELECT i.*, b.name AS branch_name, u.full_name AS user_name
+const SELECT = `SELECT i.*, b.name AS branch_name, u.full_name AS user_name,
+  (SELECT r.supplier FROM invoice_rows r WHERE r.invoice_id=i.id AND r.section='listB'
+   ORDER BY r.row_index LIMIT 1) AS first_supplier
   FROM invoices i JOIN branches b ON b.id=i.branch_id JOIN users u ON u.id=i.user_id`;
 function listInvoices(db, filters, user) {
   const { where, params } = buildFilter(filters, user);
-  return db.prepare(`${SELECT} ${where} ORDER BY i.id DESC`).all(...params);
+  return db.prepare(`${SELECT} ${where} ORDER BY date(i.invoice_date) DESC, i.id DESC`).all(...params);
 }
 function getInvoice(db, id, user) {
   const { where, params } = buildFilter({}, user);

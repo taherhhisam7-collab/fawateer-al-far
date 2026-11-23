@@ -200,9 +200,9 @@ function invoiceFields(b) {
     String(b.notes || ''), JSON.stringify(b.totals || {})];
 }
 
-app.get('/api/invoices', auth, finance, (req, res) =>
+app.get('/api/invoices', auth, (req, res) =>
   res.json(R.listInvoices(db, req.query, req.user)));
-app.get('/api/invoices/:id', auth, finance, (req, res) => {
+app.get('/api/invoices/:id', auth, (req, res) => {
   const i = R.getInvoice(db, req.params.id, req.user);
   if (!i) return res.status(404).json({ message: 'الفاتورة غير موجودة' });
   res.json(i);
