@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Plus, Trash2, Send, Calculator, CalendarDays, Store, Sun, Moon } from 'lucide-react';
+import DatePicker from './DatePicker.jsx';
 
 const LIST_HEADERS = ['المورد أو بيان الصرف', 'الفواتير', 'المدفوعات', 'الباقي', 'ملاحظات'];
 const LIST_SUBS = ['', '(إجمالي مبلغ الفاتورة)', '(المبلغ المدفوع)', '(المتبقي من الفاتورة بعد خصم المدفوع)', ''];
@@ -119,8 +120,9 @@ function ShiftTable({ rows, totals, onCell, onDel, onAdd }) {
   );
 }
 
-export default function InvoiceForm({ initial, onSubmit, branchName, branches = [], allowBranch = false, onSaved, preview = false, submitLabel = 'حفظ' }) {
+export default function InvoiceForm({ initial, onSubmit, branchName, branches = [], allowBranch = false, onSaved, onError, preview = false, submitLabel = 'حفظ' }) {
   const [branchId, setBranchId] = useState(initial?.branch_id || '');
+  const [error, setError] = useState('');
   const [form, setForm] = useState(() => initial ? {
     ...emptyForm(branchName), ...initial,
     listA: initial.listA?.length ? initial.listA : emptyForm(branchName).listA,
@@ -173,6 +175,25 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
   const submit = async (e) => {
     e?.preventDefault();
     if (preview) return;
+    const msgs = [];
+    if (allowBranch && !branchId) msgs.push('• لازم تختار الفرع قبل الحفظ.');
+    if (!form.invoice_date) msgs.push('• لازم تحدد التاريخ (يوم / شهر / سنة).');
+    const hasSupplier = form.listB.some((r) => String(r.supplier || '').trim());
+    if (!hasSupplier) msgs.push('• لازم تكتب اسم المورد في سطر المورد — ما نضيف ولا نغيّر الاسم.');
+    const rowMissingSupplier = form.listB.findIndex((r) =>
+      !String(r.supplier || '').trim() &&
+      ['invoices', 'payments', 'remaining', 'notes'].some((k) => String(r[k] || '').trim()));
+    if (rowMissingSupplier >= 0) msgs.push(`• الصف ${rowMissingSupplier + 1}: لازم تكتب اسم المورد قبل باقي البيانات.`);
+    const payIdx = form.listB.findIndex((r) => String(r.supplier || '').trim() && !String(r.payments || '').trim());
+    if (payIdx >= 0) msgs.push(`• الصف ${payIdx + 1}: لازم تعبي مبلغ المدفوع للمورد.`);
+    const invIdx = form.listB.findIndex((r) => String(r.supplier || '').trim() && !String(r.invoices || '').trim());
+    if (invIdx >= 0) msgs.push(`• الصف ${invIdx + 1}: لازم تعبي إجمالي مبلغ الفاتورة.`);
+    if (msgs.length) {
+      setError(msgs.join('\n'));
+      onError?.('في حقول إلزامية ناقصة — راجع الرسائل تحت زر الحفظ');
+      return;
+    }
+    setError('');
     setBusy(true);
     try {
       await onSubmit({
@@ -218,7 +239,7 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
         )}
         <div className="meta-card">
           <div className="meta-label"><CalendarDays size={15} /> التاريخ /</div>
-          <input type="date" value={form.invoice_date} onChange={(e) => setField('invoice_date', e.target.value)} />
+          <DatePicker value={form.invoice_date} onChange={(v) => setField('invoice_date', v)} />
         </div>
         <div className="meta-card">
           <div className="meta-label"><Calculator size={15} /> اليوم /</div>
@@ -243,6 +264,8 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
         <div className="sheet-banner-title"><span className="gold-line" /> تفاصيل فواتير الفرع</div>
         <div className="sheet-banner-sub">المورد أو بيان الصرف — الفواتير والمدفوعات والباقي</div>
       </div>
+      {error && <div className="sheet-error">{error}</div>}
+
       <ListTable rows={form.listB} totals={totals.listB}
         onCell={(i, k, v) => setCell('listB', i, k, v)}
         onDel={(i) => delRow('listB', i)} onAdd={() => addRow('listB', blank)} />

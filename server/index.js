@@ -264,6 +264,12 @@ app.get('/api/stats', auth, finance, (req, res) => {
     users: db.prepare("SELECT COUNT(*) n FROM users WHERE role='cashier'").get().n,
     perBranch, perCashier, recent });
 });
+app.get('/api/reports/suppliers', auth, (req, res) =>
+  res.json(R.supplierReport(db, req.query, req.user)));
+app.get('/api/exports/suppliers.xlsx', auth, async (req, res) => {
+  const rows = R.supplierReport(db, req.query, req.user);
+  await R.sendWorkbook(res, await R.workbookForSuppliers(rows), `suppliers-${Date.now()}.xlsx`);
+});
 app.get('/api/reports/fields', auth, finance, (req, res) => res.json(R.FIELDS));
 app.get('/api/reports/field', auth, finance, (req, res) =>
   res.json(R.fieldReport(db, req.query.field, req.query, req.user)));

@@ -3,11 +3,15 @@ import { FileSpreadsheet, LogOut, Store, User, CheckCircle2, Eye, RefreshCw } fr
 import { api } from '../api';
 import InvoiceForm from './InvoiceForm.jsx';
 import InvoiceDetailModal from './InvoiceDetailModal.jsx';
+import { fmtDate } from '../utils';
+import SupplierReport from './SupplierReport.jsx';
+import { Wallet } from 'lucide-react';
 
 export default function CashierApp({ user, onLogout, notify }) {
   const [last, setLast] = useState(null);
   const [records, setRecords] = useState([]);
   const [detail, setDetail] = useState(null);
+  const [view, setView] = useState('entry');
 
   const load = () => api('/invoices').then(setRecords).catch((e) => notify(e.message, 'error'));
   useEffect(() => { load(); }, []);
@@ -34,10 +38,16 @@ export default function CashierApp({ user, onLogout, notify }) {
         <h2>تفاصيل فواتير الفرع</h2>
         <div className="meta"><Store size={14} /> {user.branch_name} <span>•</span> <User size={14} /> {user.full_name} <span>•</span> كاشير</div>
       </div>
-      <button className="btn btn-light btn-sm" onClick={onLogout}><LogOut size={15} /> خروج</button>
+      <div className="btn-row">
+        <button className={`btn btn-sm ${view === 'entry' ? 'btn-primary' : 'btn-light'}`} onClick={() => setView('entry')}>الإدخال</button>
+        <button className={`btn btn-sm ${view === 'suppliers' ? 'btn-primary' : 'btn-light'}`} onClick={() => setView('suppliers')}><Wallet size={14} /> كشف الموردين</button>
+        <button className="btn btn-light btn-sm" onClick={onLogout}><LogOut size={15} /> خروج</button>
+      </div>
     </header>
 
     <div className="page">
+      {view === 'suppliers' && <SupplierReport branches={[{ id: user.branch_id, name: user.branch_name }]} notify={notify} title="كشف حساب موردين فرعك" />}
+      {view === 'entry' && <>
       {last && <div className="success-banner"><CheckCircle2 size={20} />
         <span>تم إدخال الفاتورة <b>{last}</b> عن فرع <b>{user.branch_name}</b>. يمكنك إدخال فاتورة جديدة الآن.</span>
         <button className="icon-btn" onClick={() => setLast(null)}>×</button>
@@ -46,7 +56,7 @@ export default function CashierApp({ user, onLogout, notify }) {
         <div className="card-header"><h3><FileSpreadsheet size={18} /> إدخال فاتورة جديدة</h3>
           <span className="badge badge-submitted">{user.branch_name}</span></div>
         <div className="card-body">
-          <InvoiceForm onSubmit={submit} branchName={user.branch_name} submitLabel="إدخال الفاتورة" />
+          <InvoiceForm onSubmit={submit} onError={notify} branchName={user.branch_name} submitLabel="إدخال الفاتورة" />
         </div>
       </div>
 
@@ -62,7 +72,7 @@ export default function CashierApp({ user, onLogout, notify }) {
               let t = {}; try { t = JSON.parse(r.totals || '{}'); } catch { /* ignore */ }
               return <tr key={r.id}>
                 <td><b>{r.code}</b></td><td>{r.branch_name}</td>
-                <td>{r.invoice_date || '-'}</td><td>{r.day_name || '-'}</td>
+                <td>{fmtDate(r.invoice_date)}</td><td>{r.day_name || '-'}</td>
                 <td>{r.first_supplier || '-'}</td><td>{t.listB?.invoices || '0'}</td>
                 <td>{t.listB?.payments || '0'}</td>
                 <td>{t.shifts?.total_amount || '0'}</td>
@@ -74,6 +84,7 @@ export default function CashierApp({ user, onLogout, notify }) {
           </tbody>
         </table></div>
       </div>
+      </>}
     </div>
 
     {detail && <InvoiceDetailModal invoice={detail} viewOnly notify={notify} onClose={() => setDetail(null)} />}

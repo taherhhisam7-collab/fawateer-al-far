@@ -68,6 +68,45 @@ function getInvoice(db, id, user) {
   try { totals = JSON.parse(invoice.totals || '{}'); } catch { totals = {}; }
   return { ...invoice, totals, listA, listB, shifts };
 }
+function supplierReport(db, filters, user) {
+  const invoices = listInvoices(db, filters, user);
+  const map = new Map();
+  invoices.forEach((inv) => {
+    const rows = db.prepare(`SELECT * FROM invoice_rows WHERE invoice_id=? AND section='listB' ORDER BY row_index`).all(inv.id);
+    rows.forEach((r) => {
+      const name = String(r.supplier || '').trim();
+      if (!name) return; // الكاشير مسؤول عن كتابة الاسم كما هو، حتى لو تكرر باختلاف بسيط
+      if (!map.has(name)) map.set(name, {
+        supplier: name, invoices: 0, payments: 0, remaining: 0, count: 0,
+        branches: new Set(), cashiers: new Set(), lastDate: '', codes: [],
+      });
+      const e = map.get(name);
+      e.invoices += num(r.invoices); e.payments += num(r.payments);
+      e.remaining += num(r.remaining); e.count += 1;
+      e.branches.add(inv.branch_name); e.cashiers.add(inv.user_name);
+      if (inv.invoice_date > e.lastDate) e.lastDate = inv.invoice_date;
+      if (e.codes.length < 5) e.codes.push(inv.code);
+    });
+  });
+  return [...map.values()]
+    .map((e) => ({ ...e, branches: [...e.branches].join('، '), cashiers: [...e.cashiers].join('، ') }))
+    .filter((e) => Math.abs(e.remaining) > 0.001)
+    .sort((a, b) => Math.abs(b.remaining) - Math.abs(a.remaining));
+}
+const num = (v) => { const n = Number(String(v ?? '').replace(/[٬,]/g, '')); return Number.isFinite(n) ? n : 0; };
+
+async function workbookForSuppliers(rows, title = 'كشف حساب الموردين') {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('كشف الموردين');
+  title(ws, 'A1:H1', title);
+  ws.addRow([]);
+  ws.addRow(['المورد', 'الفرع', 'عدد الفواتير', 'إجمالي الفواتير', 'إجمالي المدفوعات', 'المتبقي', 'آخر تاريخ', 'أرقام الفواتير']);
+  head(ws.getRow(3));
+  rows.forEach((r) => ws.addRow([r.supplier, r.branches, r.count, r.invoices, r.payments, r.remaining, r.lastDate, r.codes.join('، ')]));
+  widths(ws, [30, 24, 15, 18, 18, 15, 15, 34]); body(ws, 3);
+  return wb;
+}
+
 function fieldReport(db, fieldKey, filters, user) {
   const invoices = listInvoices(db, filters, user);
   const field = FIELDS.find((f) => f.key === fieldKey);
@@ -194,4 +233,5 @@ async function sendWorkbook(res, wb, filename) {
   await wb.xlsx.write(res); res.end();
 }
 module.exports = { FIELDS, LIST_HEADERS, SHIFT_HEADERS, buildFilter, listInvoices, getInvoice, fieldReport,
+  supplierReport, workbookForSuppliers,
   workbookForInvoices, workbookForInvoice, workbookForField, sendWorkbook };

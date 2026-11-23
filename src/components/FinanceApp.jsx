@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   LayoutDashboard, Building2, Users, FileBarChart, ListFilter, LogOut, KeyRound, ShieldCheck,
-  FileSpreadsheet, Eye, Pencil, Trash2, Plus, X
+  FileSpreadsheet, Eye, Pencil, Trash2, Plus, X, Wallet
 } from 'lucide-react';
 import { api } from '../api';
 import Dashboard from './Dashboard.jsx';
@@ -13,18 +13,21 @@ import PrintableReport from './PrintableReport.jsx';
 import InvoiceForm from './InvoiceForm.jsx';
 import InvoiceDetailModal from './InvoiceDetailModal.jsx';
 import { Modal } from './ui.jsx';
+import SupplierReport from './SupplierReport.jsx';
+import { fmtDate } from '../utils';
 
 const NAV = [
   { id: 'dashboard', label: 'لوحة التحكم', icon: LayoutDashboard },
   { id: 'entry', label: 'شاشة الإدخال', icon: FileSpreadsheet },
   { id: 'branches', label: 'الفروع', icon: Building2 },
   { id: 'users', label: 'المستخدمون', icon: Users },
-  { id: 'reports', label: 'الفواتير والتقارير', icon: FileBarChart },
-  { id: 'fields', label: 'تقارير الحقول', icon: ListFilter },
+  { id: 'reports', label: 'الفواتير', icon: FileBarChart },
+  { id: 'suppliers', label: 'كشف الموردين', icon: Wallet },
+  { id: 'fields', label: 'التقارير', icon: ListFilter },
 ];
 const TITLES = {
   dashboard: 'لوحة التحكم', entry: 'تفاصيل فواتير الفرع', branches: 'إدارة الفروع', users: 'إدارة المستخدمين',
-  reports: 'الفواتير والتقارير', fields: 'تقارير الحقول', settings: 'إعدادات الحساب',
+  reports: 'الفواتير', suppliers: 'كشف الموردين', fields: 'التقارير', settings: 'إعدادات الحساب',
 };
 
 export default function FinanceApp({ user, onLogout, notify }) {
@@ -102,7 +105,7 @@ export default function FinanceApp({ user, onLogout, notify }) {
             </div>
             <div className="card-body">
               <InvoiceForm key={editing ? `edit-${editing.id}` : 'new'} initial={editing || undefined}
-                onSubmit={save} branches={branches} allowBranch
+                onSubmit={save} onError={notify} branches={branches} allowBranch
                 submitLabel={editing ? 'حفظ التعديلات' : 'حفظ'}
                 onSaved={() => { setEditing(null); loadRecords(); }} />
             </div>
@@ -120,7 +123,7 @@ export default function FinanceApp({ user, onLogout, notify }) {
                   let t = {}; try { t = JSON.parse(r.totals || '{}'); } catch { /* ignore */ }
                   return <tr key={r.id}>
                     <td><b>{r.code}</b></td><td>{r.branch_name}</td><td>{r.user_name}</td>
-                    <td>{r.invoice_date || '-'}</td><td>{r.day_name || '-'}</td>
+                    <td>{fmtDate(r.invoice_date)}</td><td>{r.day_name || '-'}</td>
                     <td>{t.listA?.invoices || '-'}</td><td>{t.shifts?.total_amount || '-'}</td>
                     <td><ActionIcons row={r} /></td>
                   </tr>;
@@ -135,6 +138,7 @@ export default function FinanceApp({ user, onLogout, notify }) {
         {tab === 'reports' && <Reports branches={branches} users={users} notify={notify}
           onPrint={setPrintData} onUpdate={() => { loadUsers(); loadRecords(); }}
           onEdit={openEdit} onDelete={remove} />}
+        {tab === 'suppliers' && <SupplierReport branches={branches} notify={notify} />}
         {tab === 'fields' && <FieldReports branches={branches} users={users} notify={notify} />}
         {tab === 'settings' && <div className="card"><div className="card-header"><h3>تغيير كلمة المرور</h3></div>
           <div className="card-body" style={{ maxWidth: 420 }}>
@@ -157,7 +161,7 @@ export default function FinanceApp({ user, onLogout, notify }) {
         <div className="modal-header"><h3>تعديل السجل {editing.code}</h3>
           <button className="icon-btn" onClick={() => setEditing(null)}><X size={19} /></button></div>
         <div className="modal-body">
-          <InvoiceForm initial={editing} onSubmit={save} branches={branches} allowBranch
+          <InvoiceForm initial={editing} onSubmit={save} onError={notify} branches={branches} allowBranch
             submitLabel="حفظ التعديلات" onSaved={() => { setEditing(null); loadRecords(); }} />
         </div>
       </div>

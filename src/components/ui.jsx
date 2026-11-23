@@ -1,5 +1,6 @@
 import React from 'react';
 import { X } from 'lucide-react';
+import DatePicker from './DatePicker.jsx';
 
 export function Modal({ title, onClose, children, footer, wide }) {
   return <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -24,8 +25,8 @@ export function FilterBar({ filters, setFilters, branches = [], users = [] }) {
         <option value="">كل الكاشيرات</option>
         {users.map((u) => <option key={u.id} value={u.id}>{u.full_name}</option>)}
       </select></div>
-    <div className="field"><label>من تاريخ</label><input type="date" value={filters.from || ''} onChange={(e) => set('from', e.target.value)} /></div>
-    <div className="field"><label>إلى تاريخ</label><input type="date" value={filters.to || ''} onChange={(e) => set('to', e.target.value)} /></div>
+    <div className="field"><label>من تاريخ</label><DatePicker value={filters.from} onChange={(v) => set('from', v)} /></div>
+    <div className="field"><label>إلى تاريخ</label><DatePicker value={filters.to} onChange={(v) => set('to', v)} /></div>
     <div className="field" style={{ gridColumn: 'span 2' }}><label>بحث عام</label>
       <input value={filters.q || ''} onChange={(e) => set('q', e.target.value)} placeholder="رقم الفاتورة، الفرع، الكاشير، ملاحظات..." /></div>
   </div>;
