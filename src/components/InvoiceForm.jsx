@@ -88,6 +88,10 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
   const ListTable = ({ keyName, t }) => (
     <div className="sheet-table">
       <table className="sheet-grid list-grid">
+        <colgroup>
+          <col style={{ width: '30%' }} /><col style={{ width: '17%' }} /><col style={{ width: '17%' }} />
+          <col style={{ width: '17%' }} /><col style={{ width: '19%' }} /><col style={{ width: 36 }} />
+        </colgroup>
         <thead><tr>
           {LIST_HEADERS.map((h, i) => <th key={h} className={i === 3 ? 'calc-col' : ''}>{h}</th>)}
           <th className="act-col"></th>
@@ -97,6 +101,8 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
             {LIST_KEYS.map((k, ki) => (
               <td key={k} className={ki === 3 ? 'calc-col' : ''}>
                 <input value={r[k] ?? ''} inputMode={ki === 1 || ki === 2 ? 'decimal' : 'text'}
+                  dir={ki === 1 || ki === 2 || ki === 3 ? 'ltr' : 'rtl'}
+                  className={ki === 1 || ki === 2 || ki === 3 ? 'num-input' : ''}
                   onChange={(e) => setCell(keyName, i, k, e.target.value)} />
               </td>
             ))}
@@ -117,6 +123,11 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
   const ShiftTable = () => (
     <div className="sheet-table shift-block">
       <table className="sheet-grid shift-grid">
+        <colgroup>
+          <col style={{ width: '14%' }} />
+          {SHIFT_KEYS.slice(1).map((k) => <col key={k} style={{ width: '14.3%' }} />)}
+          <col style={{ width: 36 }} />
+        </colgroup>
         <thead><tr>{SHIFT_HEADERS.map((h) => <th key={h}>{h}</th>)}<th className="act-col"></th></tr></thead>
         <tbody>
           {form.shifts.map((r, i) => <tr key={i}>
@@ -128,7 +139,7 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
                     <input value={r.shift_label} onChange={(e) => setCell('shifts', i, k, e.target.value)} />
                   </div>
                 ) : (
-                  <input value={r[k] ?? ''} inputMode="decimal" readOnly={ki >= 4}
+                  <input value={r[k] ?? ''} inputMode="decimal" dir="ltr" className="num-input" readOnly={ki >= 4}
                     onChange={(e) => setCell('shifts', i, k, e.target.value)} />
                 )}
               </td>

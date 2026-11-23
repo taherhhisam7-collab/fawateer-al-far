@@ -310,6 +310,13 @@ textarea { resize: vertical; min-height: 70px; }
 .sheet-grid td input[readonly] { color: #0f766e; font-weight: 700; background: transparent; }
 .sheet-grid .calc-col { background: #fff9e6 !important; }
 .sheet-grid .calc-col input { color: #8a6212; font-weight: 800; }
+.sheet-grid .num-input {
+  font-size: 15px !important; font-weight: 800; font-variant-numeric: tabular-nums;
+  text-align: center !important; color: #0f766e; letter-spacing: .3px; padding: 2px 4px;
+}
+.sheet-grid .calc-col .num-input { color: #8a6212; }
+.sheet-grid td { height: 40px; }
+.sheet-grid .num-input::placeholder { color: #cbd5e1; }
 .sheet-grid .act-col { width: 36px; text-align: center; background: #fbfcfb; }
 .sheet-del {
   border: none; background: transparent; color: #cbd5d1; cursor: pointer; padding: 5px;
