@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
 const L = ['المورد أو بيان الصرف', 'الفواتير', 'المدفوعات', 'الباقي', 'ملاحظات'];
-const S = ['الشفت', 'إجمالي الكاش', 'الشبكة', 'الفرع (الصرف)', 'صافي الكاش', 'إجمالي المبلغ'];
+const S = ['الشفت', 'إجمالي الكاش', 'الشبكة', 'الفرع (الصرف)', 'صافي الكاش', 'إجمالي الدخل'];
 
 function ListTable({ rows = [], totals = {} }) {
   return <table>
@@ -38,7 +38,6 @@ export default function PrintableReport({ data, onDone }) {
       <div>التاريخ: <b>{data.invoice_date}</b></div>
       <div>اليوم: <b>{data.day_name}</b></div>
     </div>
-    <ListTable rows={data.listA} totals={data.totals?.listA} />
     <h2>الشفت</h2>
     <table>
       <thead><tr>{S.map((h) => <th key={h}>{h}</th>)}</tr></thead>

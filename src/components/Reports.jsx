@@ -42,7 +42,7 @@ export default function Reports({ branches, users, notify, onPrint, onUpdate, on
       <div className="card-header"><h3>الفواتير</h3></div>
       <div className="table-scroll"><table className="data-table">
         <thead><tr><th>الرقم</th><th>الفرع</th><th>الكاشير</th><th>التاريخ</th><th>اليوم</th>
-          <th>فواتير (1)</th><th>فواتير (2)</th><th>إجمالي المبلغ</th><th>الإجراءات</th></tr></thead>
+          <th>فواتير (1)</th><th>فواتير (2)</th><th>إجمالي الدخل</th><th>الإجراءات</th></tr></thead>
         <tbody>
           {invoices.length === 0 && <tr><td colSpan="9" className="center muted">لا توجد فواتير مطابقة</td></tr>}
           {invoices.map((i) => {

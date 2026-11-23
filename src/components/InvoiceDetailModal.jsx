@@ -5,7 +5,7 @@ import { Modal } from './ui.jsx';
 
 const L = ['المورد أو بيان الصرف', 'الفواتير', 'المدفوعات', 'الباقي', 'ملاحظات'];
 const LK = ['supplier', 'invoices', 'payments', 'remaining', 'notes'];
-const S = ['الشفت', 'إجمالي الكاش', 'الشبكة', 'الفرع (الصرف)', 'صافي الكاش', 'إجمالي المبلغ'];
+const S = ['الشفت', 'إجمالي الكاش', 'الشبكة', 'الفرع (الصرف)', 'صافي الكاش', 'إجمالي الدخل'];
 const SK = ['shift_label', 'total_cash', 'network', 'branch_expense', 'net_cash', 'total_amount'];
 
 function Table({ title, headers, keys, rows, totals }) {
@@ -29,7 +29,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate, onPrint
     `التاريخ: ${invoice.invoice_date}`, `اليوم: ${invoice.day_name}`,
     `إجمالي الفواتير (1): ${invoice.totals?.listA?.invoices || '-'}`,
     `إجمالي الفواتير (2): ${invoice.totals?.listB?.invoices || '-'}`,
-    `إجمالي المبلغ: ${invoice.totals?.shifts?.total_amount || '-'}`,
+    `إجمالي الدخل: ${invoice.totals?.shifts?.total_amount || '-'}`,
   ]);
   const remove = async () => {
     if (!window.confirm(`حذف النموذج ${invoice.code}؟`)) return;
@@ -52,7 +52,6 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate, onPrint
         ['اليوم', invoice.day_name], ['تاريخ الإضافة', invoice.created_at]].map(([k, v]) =>
         <div className="field" key={k}><label>{k}</label><input value={v || '-'} disabled /></div>)}
     </div>
-    <Table title="تفاصيل فواتير الفرع (1)" headers={L} keys={LK} rows={invoice.listA} totals={invoice.totals?.listA} />
     <Table title="الشفت" headers={S} keys={SK} rows={invoice.shifts} totals={invoice.totals?.shifts} />
     <Table title="تفاصيل فواتير الفرع (2)" headers={L} keys={LK} rows={invoice.listB} totals={invoice.totals?.listB} />
   </Modal>;

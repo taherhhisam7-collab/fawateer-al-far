@@ -113,7 +113,7 @@ export default function FinanceApp({ user, onLogout, notify }) {
               <button className="btn btn-ghost btn-sm" onClick={loadRecords}>تحديث</button></div>
             <div className="table-scroll"><table className="data-table">
               <thead><tr><th>الرقم</th><th>الفرع</th><th>الكاشير</th><th>التاريخ</th><th>اليوم</th>
-                <th>فواتير (1)</th><th>إجمالي المبلغ</th><th>الإجراءات</th></tr></thead>
+                <th>فواتير (1)</th><th>إجمالي الدخل</th><th>الإجراءات</th></tr></thead>
               <tbody>
                 {records.length === 0 && <tr><td colSpan="8" className="center muted">لا توجد سجلات بعد — احفظ أول نموذج ليظهر هنا</td></tr>}
                 {records.map((r) => {

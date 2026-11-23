@@ -19,11 +19,11 @@ const FIELDS = [
   { key: 'shift.network', label: 'الشبكة', group: 'الشفت' },
   { key: 'shift.branch_expense', label: 'الفرع (الصرف)', group: 'الشفت' },
   { key: 'shift.net_cash', label: 'صافي الكاش', group: 'الشفت' },
-  { key: 'shift.total_amount', label: 'إجمالي المبلغ', group: 'الشفت' },
+  { key: 'shift.total_amount', label: 'إجمالي الدخل', group: 'الشفت' },
 ];
 
 const LIST_HEADERS = ['المورد أو بيان الصرف', 'الفواتير', 'المدفوعات', 'الباقي', 'ملاحظات'];
-const SHIFT_HEADERS = ['الشفت', 'إجمالي الكاش', 'الشبكة', 'الفرع (الصرف)', 'صافي الكاش', 'إجمالي المبلغ'];
+const SHIFT_HEADERS = ['الشفت', 'إجمالي الكاش', 'الشبكة', 'الفرع (الصرف)', 'صافي الكاش', 'إجمالي الدخل'];
 
 function buildFilter(filters = {}, user) {
   const clauses = [];
@@ -134,7 +134,7 @@ async function workbookForInvoices(invoices) {
   const ws = wb.addWorksheet('فواتير الفرع');
   title(ws, 'A1:H1', 'تفاصيل فواتير الفرع — التقرير');
   ws.addRow([]);
-  ws.addRow(['رقم النموذج', 'الفرع', 'الكاشير', 'التاريخ', 'اليوم', 'إجمالي الفواتير (1)', 'إجمالي الفواتير (2)', 'إجمالي المبلغ']);
+  ws.addRow(['رقم النموذج', 'الفرع', 'الكاشير', 'التاريخ', 'اليوم', 'إجمالي الفواتير (1)', 'إجمالي الفواتير (2)', 'إجمالي الدخل']);
   head(ws.getRow(3));
   invoices.forEach((i) => {
     let t = {}; try { t = JSON.parse(i.totals || '{}'); } catch { /* ignore */ }

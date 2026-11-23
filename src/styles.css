@@ -328,6 +328,11 @@ textarea { resize: vertical; min-height: 70px; }
   font-weight: 800; color: #3f3a2f; height: 38px;
 }
 .sheet-grid tfoot td.calc-col { background: #f3e8c8 !important; color: #7c5810; }
+.sheet-grid tfoot td b {
+  display: block; width: 100%; text-align: center; font-variant-numeric: tabular-nums;
+  font-size: 15px; letter-spacing: .3px;
+}
+.sheet-grid tfoot td:first-child b { text-align: right; }
 .add-row {
   border: none; background: #f0fdfa; color: #0f766e; font-size: 12px; font-weight: 700;
   padding: 7px 12px; cursor: pointer; display: flex; align-items: center; gap: 5px;

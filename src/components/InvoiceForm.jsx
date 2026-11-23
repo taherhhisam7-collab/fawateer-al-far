@@ -3,7 +3,7 @@ import { Plus, Trash2, Send, Calculator, CalendarDays, Store, Sun, Moon } from '
 
 const LIST_HEADERS = ['المورد أو بيان الصرف', 'الفواتير', 'المدفوعات', 'الباقي', 'ملاحظات'];
 const LIST_KEYS = ['supplier', 'invoices', 'payments', 'remaining', 'notes'];
-const SHIFT_HEADERS = ['الشفت', 'إجمالي الكاش', 'الشبكة', 'الفرع (الصرف)', 'صافي الكاش', 'إجمالي المبلغ'];
+const SHIFT_HEADERS = ['الشفت', 'إجمالي الكاش', 'الشبكة', 'الفرع (الصرف)', 'صافي الكاش', 'إجمالي الدخل'];
 const SHIFT_KEYS = ['shift_label', 'total_cash', 'network', 'branch_expense', 'net_cash', 'total_amount'];
 
 const num = (v) => { const n = Number(String(v ?? '').replace(/[٬,]/g, '')); return Number.isFinite(n) ? n : 0; };
@@ -139,7 +139,7 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
       if (section === 'shifts') {
         if (k === 'total_cash' || k === 'branch_expense') next.net_cash = calc(next.total_cash, next.branch_expense);
         if (k === 'total_cash' || k === 'branch_expense' || k === 'network') {
-          next.total_amount = String(num(next.net_cash) + num(next.network));
+          next.total_amount = String(num(next.total_cash) + num(next.network));
         }
       }
       return next;
@@ -161,7 +161,8 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
     try {
       await onSubmit({
         branch_id: branchId || undefined, invoice_date: form.invoice_date, day_name: form.day_name, notes: form.notes,
-        listA: form.listA, listB: form.listB, shifts: form.shifts, totals,
+        listA: [], listB: form.listB, shifts: form.shifts,
+        totals: { ...totals, listA: { invoices: '', payments: '', remaining: '' } },
       });
       onSaved?.();
       if (!initial) setForm(emptyForm(branchName));
@@ -183,10 +184,6 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
               <Send size={15} /> {busy ? 'جاري الحفظ...' : 'حفظ'}
             </button>}
       </div>
-
-      <ListTable rows={form.listA} totals={totals.listA}
-        onCell={(i, k, v) => setCell('listA', i, k, v)}
-        onDel={(i) => delRow('listA', i)} onAdd={() => addRow('listA', blank)} />
 
       <div className="sheet-meta">
         {allowBranch ? (
@@ -219,7 +216,7 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
 
       <div className="sheet-banner second">
         <div className="sheet-banner-title"><span className="gold-line" /> تفاصيل فواتير الفرع</div>
-        <div className="sheet-banner-sub">القائمة الثانية — إدخال إضافي لنفس اليوم</div>
+        <div className="sheet-banner-sub">المورد أو بيان الصرف — الفواتير والمدفوعات والباقي</div>
       </div>
       <ListTable rows={form.listB} totals={totals.listB}
         onCell={(i, k, v) => setCell('listB', i, k, v)}
@@ -227,7 +224,7 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
 
       <div className="sheet-submit">
         <div className="sheet-hint">
-          <Calculator size={16} /> الحقول المحسوبة (الباقي، صافي الكاش، إجمالي المبلغ) تتحدث تلقائياً أثناء الإدخال.
+          <Calculator size={16} /> الحقول المحسوبة (الباقي، صافي الكاش، إجمالي الدخل) تتحدث تلقائياً أثناء الإدخال.
         </div>
         {preview
           ? <button className="btn btn-ghost" type="button" disabled><Send size={16} /> معاينة فقط</button>
