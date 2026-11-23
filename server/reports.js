@@ -172,6 +172,7 @@ async function workbookForInvoice(inv) {
   ws.addRow(['الإجمالي', st.total_cash || '', st.network || '', st.branch_expense || '', st.net_cash || '', st.total_amount || '']);
   head(ws.getRow(ws.rowCount), TOTAL_FILL);
   addList(inv.listB, inv.totals?.listB);
+  if (inv.totals?.difference) ws.addRow(['الفرق بين إجمالي المصروفات والفرع (الصرف)', inv.totals.difference.text]);
   widths(ws, [31, 15, 15, 15, 15, 22]);
   body(ws, 1);
   return wb;

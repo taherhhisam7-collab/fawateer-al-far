@@ -51,9 +51,9 @@ function ListTable({ rows, totals, onCell, onDel, onAdd }) {
             <tr key={i}>
               {LIST_KEYS.map((k, ki) => (
                 <td key={k} className={ki === 3 ? 'calc-col' : ''}>
-                  <input value={r[k] ?? ''} inputMode={ki === 1 || ki === 2 ? 'decimal' : 'text'}
-                    dir={ki === 1 || ki === 2 || ki === 3 ? 'ltr' : 'rtl'}
-                    className={ki === 1 || ki === 2 || ki === 3 ? 'num-input' : ''}
+                  <input value={r[k] ?? ''} inputMode={ki === 2 || ki === 3 ? 'decimal' : 'text'}
+                    dir={ki === 2 || ki === 3 ? 'ltr' : 'rtl'}
+                    className={ki === 2 || ki === 3 ? 'num-input' : ''}
                     onChange={(e) => onCell(i, k, e.target.value)} />
                 </td>
               ))}
@@ -133,9 +133,7 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
     ...f, [section]: f[section].map((r, idx) => {
       if (idx !== i) return r;
       const next = { ...r, [k]: v };
-      if (section === 'listA' || section === 'listB') {
-        if (k === 'invoices' || k === 'payments') next.remaining = calc(next.invoices, next.payments);
-      }
+      // عمود «الفواتير» نص حر، و«الباقي» يُدخل يدوياً — لا معادلة بينهما
       if (section === 'shifts') {
         if (k === 'total_cash' || k === 'branch_expense') next.net_cash = calc(next.total_cash, next.branch_expense);
         if (k === 'total_cash' || k === 'branch_expense' || k === 'network') {
@@ -149,9 +147,21 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
   const delRow = (key, i) => setForm((f) => ({ ...f, [key]: f[key].filter((_, idx) => idx !== i) }));
 
   const totals = useMemo(() => ({
-    listA: { invoices: sum(form.listA, 'invoices'), payments: sum(form.listA, 'payments'), remaining: sum(form.listA, 'remaining') },
-    listB: { invoices: sum(form.listB, 'invoices'), payments: sum(form.listB, 'payments'), remaining: sum(form.listB, 'remaining') },
+    listA: { invoices: '', payments: sum(form.listA, 'payments'), remaining: sum(form.listA, 'remaining') },
+    listB: { invoices: '', payments: sum(form.listB, 'payments'), remaining: sum(form.listB, 'remaining') },
     shifts: Object.fromEntries(SHIFT_KEYS.filter((k) => k !== 'shift_label').map((k) => [k, sum(form.shifts, k)])),
+    difference: (() => {
+      const payments = sum(form.listB, 'payments');
+      const expense = sum(form.shifts, 'branch_expense');
+      const diff = num(payments) - num(expense);
+      return {
+        payments, expense, diff: String(diff),
+        text: diff > 0 ? `زيادة في الكاش: ${diff}`
+          : diff < 0 ? `عجز في الكاش: ${Math.abs(diff)}`
+            : 'لا فرق — إجمالي المدفوعات يساوي إجمالي الفرع (الصرف)',
+        state: diff > 0 ? 'plus' : diff < 0 ? 'minus' : 'equal',
+      };
+    })(),
   }), [form]);
 
   const submit = async (e) => {
@@ -214,6 +224,15 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
         onCell={(i, k, v) => setCell('shifts', i, k, v)}
         onDel={(i) => delRow('shifts', i)} onAdd={() => addRow('shifts', () => blankShift())} />
 
+      <div className={`diff-strip ${totals.difference.state}`}>
+        <div className="diff-title">الفرق بين إجمالي المصروفات والفرع (الصرف)</div>
+        <div className="diff-numbers">
+          <span>المدفوعات: <b>{totals.difference.payments || '0'}</b></span>
+          <span>الفرع (الصرف): <b>{totals.difference.expense || '0'}</b></span>
+        </div>
+        <div className="diff-result">{totals.difference.text}</div>
+      </div>
+
       <div className="sheet-banner second">
         <div className="sheet-banner-title"><span className="gold-line" /> تفاصيل فواتير الفرع</div>
         <div className="sheet-banner-sub">المورد أو بيان الصرف — الفواتير والمدفوعات والباقي</div>
@@ -224,7 +243,7 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
 
       <div className="sheet-submit">
         <div className="sheet-hint">
-          <Calculator size={16} /> الحقول المحسوبة (الباقي، صافي الكاش، إجمالي الدخل) تتحدث تلقائياً أثناء الإدخال.
+          <Calculator size={16} /> عمود «الفواتير» نص حر، و«صافي الكاش» و«إجمالي الدخل» يُحسبان تلقائياً.
         </div>
         {preview
           ? <button className="btn btn-ghost" type="button" disabled><Send size={16} /> معاينة فقط</button>

@@ -50,6 +50,7 @@ export default function PrintableReport({ data, onDone }) {
           <td>{st.branch_expense || ''}</td><td>{st.net_cash || ''}</td><td>{st.total_amount || ''}</td></tr>
       </tbody>
     </table>
+    {data.totals?.difference && <h2>الفرق بين إجمالي المصروفات والفرع (الصرف): {data.totals.difference.text}</h2>}
     <ListTable rows={data.listB} totals={data.totals?.listB} />
     <div className="print-sign">
       <div>اسم الكاشير: .............................</div>
