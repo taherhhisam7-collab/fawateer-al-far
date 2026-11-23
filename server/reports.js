@@ -34,12 +34,49 @@ function buildFilter(filters = {}, user) {
     userId: 'i.user_id = ?',
     from: 'date(i.invoice_date) >= date(?)',
     to: 'date(i.invoice_date) <= date(?)',
+    shift: "EXISTS (SELECT 1 FROM shift_rows s WHERE s.invoice_id=i.id AND s.shift_label=?)",
+    income: (v) => v === 'cash'
+      ? "EXISTS (SELECT 1 FROM shift_rows s WHERE s.invoice_id=i.id AND CAST(REPLACE(s.total_cash,',','') AS REAL)>0)"
+      : "EXISTS (SELECT 1 FROM shift_rows s WHERE s.invoice_id=i.id AND CAST(REPLACE(s.network,',','') AS REAL)>0)",
+    remaining: (v) => v === 'due'
+      ? "EXISTS (SELECT 1 FROM invoice_rows r WHERE r.invoice_id=i.id AND CAST(REPLACE(COALESCE(r.remaining,'0'),'٬','') AS REAL)>0)"
+      : v === 'over'
+        ? "EXISTS (SELECT 1 FROM invoice_rows r WHERE r.invoice_id=i.id AND CAST(REPLACE(COALESCE(r.remaining,'0'),'٬','') AS REAL)<0)"
+        : "NOT EXISTS (SELECT 1 FROM invoice_rows r WHERE r.invoice_id=i.id AND CAST(REPLACE(COALESCE(r.remaining,'0'),'٬','') AS REAL)<>0)",
+    net: (v) => v === 'plus'
+      ? "EXISTS (SELECT 1 FROM shift_rows s WHERE s.invoice_id=i.id AND CAST(REPLACE(COALESCE(s.net_cash,'0'),'٬','') AS REAL)>0)"
+      : "EXISTS (SELECT 1 FROM shift_rows s WHERE s.invoice_id=i.id AND CAST(REPLACE(COALESCE(s.net_cash,'0'),'٬','') AS REAL)<0)",
   };
   Object.keys(map).forEach((k) => {
     const v = filters[k];
     if (v === undefined || v === null || v === '') return;
-    clauses.push(map[k]); params.push(v);
+    const clause = typeof map[k] === 'function' ? map[k](v) : map[k];
+    clauses.push(clause);
+    if (typeof map[k] !== 'function') params.push(v);
   });
+  const amount = (v) => { const n = Number(String(v ?? '').replace(/[٬,]/g, '')); return Number.isFinite(n) ? n : 0; };
+  const ranges = [
+    ['incomeMin', "COALESCE((SELECT SUM(CAST(REPLACE(COALESCE(s.total_amount,'0'),'٬','') AS REAL)) FROM shift_rows s WHERE s.invoice_id=i.id),0) >= ?"],
+    ['incomeMax', "COALESCE((SELECT SUM(CAST(REPLACE(COALESCE(s.total_amount,'0'),'٬','') AS REAL)) FROM shift_rows s WHERE s.invoice_id=i.id),0) <= ?"],
+    ['expenseMin', "COALESCE((SELECT SUM(CAST(REPLACE(COALESCE(s.branch_expense,'0'),'٬','') AS REAL)) FROM shift_rows s WHERE s.invoice_id=i.id),0) >= ?"],
+    ['expenseMax', "COALESCE((SELECT SUM(CAST(REPLACE(COALESCE(s.branch_expense,'0'),'٬','') AS REAL)) FROM shift_rows s WHERE s.invoice_id=i.id),0) <= ?"],
+    ['invoiceMin', "COALESCE((SELECT SUM(CAST(REPLACE(COALESCE(r.invoices,'0'),'٬','') AS REAL)) FROM invoice_rows r WHERE r.invoice_id=i.id AND r.section='listB'),0) >= ?"],
+    ['invoiceMax', "COALESCE((SELECT SUM(CAST(REPLACE(COALESCE(r.invoices,'0'),'٬','') AS REAL)) FROM invoice_rows r WHERE r.invoice_id=i.id AND r.section='listB'),0) <= ?"],
+    ['paymentsMin', "COALESCE((SELECT SUM(CAST(REPLACE(COALESCE(r.payments,'0'),'٬','') AS REAL)) FROM invoice_rows r WHERE r.invoice_id=i.id AND r.section='listB'),0) >= ?"],
+    ['paymentsMax', "COALESCE((SELECT SUM(CAST(REPLACE(COALESCE(r.payments,'0'),'٬','') AS REAL)) FROM invoice_rows r WHERE r.invoice_id=i.id AND r.section='listB'),0) <= ?"],
+    ['remainingMin', "COALESCE((SELECT SUM(CAST(REPLACE(COALESCE(r.remaining,'0'),'٬','') AS REAL)) FROM invoice_rows r WHERE r.invoice_id=i.id AND r.section='listB'),0) >= ?"],
+    ['remainingMax', "COALESCE((SELECT SUM(CAST(REPLACE(COALESCE(r.remaining,'0'),'٬','') AS REAL)) FROM invoice_rows r WHERE r.invoice_id=i.id AND r.section='listB'),0) <= ?"],
+  ];
+  ranges.forEach(([key, clause]) => {
+    const v = filters[key];
+    if (v === undefined || v === null || v === '') return;
+    clauses.push(clause); params.push(amount(v));
+  });
+  if (filters.notes) {
+    const n = `%${filters.notes}%`;
+    clauses.push('(i.notes LIKE ? OR EXISTS (SELECT 1 FROM invoice_rows r WHERE r.invoice_id=i.id AND r.notes LIKE ?))');
+    params.push(n, n);
+  }
   if (filters.q) {
     clauses.push('(i.code LIKE ? OR i.invoice_date LIKE ? OR i.day_name LIKE ? OR i.notes LIKE ? OR b.name LIKE ? OR u.full_name LIKE ?)');
     const q = `%${filters.q}%`;

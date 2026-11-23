@@ -59,6 +59,12 @@ export default function SupplierReport({ branches = [], notify, title = 'كشف 
               <option value="">كل الفروع</option>
               {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select></div>
+          <div className="field"><label>الشفت</label>
+            <select value={filters.shift || ''} onChange={(e) => set('shift', e.target.value)}>
+              <option value="">كل الشفتات</option>
+              <option value="صباحي">صباحي</option>
+              <option value="مسائي">مسائي</option>
+            </select></div>
           <div className="field"><label>من تاريخ</label><DatePicker value={filters.from} onChange={(v) => set('from', v)} /></div>
           <div className="field"><label>إلى تاريخ</label><DatePicker value={filters.to} onChange={(v) => set('to', v)} /></div>
           <div className="field"><label>بحث المورد</label><input value={filters.q || ''} onChange={(e) => set('q', e.target.value)} placeholder="اسم المورد" /></div>
