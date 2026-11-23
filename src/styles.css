@@ -328,7 +328,12 @@ textarea { resize: vertical; min-height: 70px; }
 }
 .add-row:hover { background: #ccfbf1; }
 
-.sheet-meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.sheet-actions-top {
+  position: sticky; top: 66px; z-index: 20; display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; background: rgba(255, 255, 255, .95); backdrop-filter: blur(6px);
+  border: 1px solid #cbe8df; border-radius: 10px; padding: 8px 12px; box-shadow: 0 4px 12px rgba(15, 118, 110, .1);
+}
+.sheet-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
 .meta-card {
   background: linear-gradient(180deg, #fff, #f3faf7); border: 1px solid #d7eae5;
   border-top: 3px solid #0d9488; border-radius: 12px; padding: 10px 12px;
@@ -349,6 +354,20 @@ textarea { resize: vertical; min-height: 70px; }
 }
 .sheet-submit-btn:hover { background: linear-gradient(120deg, #0f766e, #0b3b36); }
 
+/* ---------- وضع التابلت ---------- */
+@media (min-width: 861px) and (max-width: 1180px) {
+  .sidebar { width: 206px; }
+  .brand strong { font-size: 14px; }
+  .nav-item { padding: 10px; font-size: 13px; }
+  .page { padding: 16px; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .filter-bar { grid-template-columns: repeat(2, 1fr); }
+  .sheet-grid { font-size: 12px; }
+  .sheet-grid th, .sheet-grid td { height: 34px; padding: 2px 3px; }
+  .sheet-meta { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ---------- وضع الجوال ---------- */
 @media (max-width: 860px) {
   .sheet-meta { grid-template-columns: 1fr; }
   .invoice-sheet { padding: 10px; gap: 12px; }
@@ -357,4 +376,57 @@ textarea { resize: vertical; min-height: 70px; }
   .nav-item { justify-content: center; }
   .page { padding: 14px; }
   .meta-paper { width: 100%; }
+}
+
+@media (max-width: 600px) {
+  .app-shell { flex-direction: column; }
+  .sidebar {
+    width: 100%; height: auto; position: static; flex-direction: row; flex-wrap: wrap;
+    gap: 5px; padding: 8px;
+  }
+  .sidebar .brand, .sidebar .sidebar-user, .sidebar .sidebar-spacer { display: none; }
+  .nav-item {
+    width: auto; flex: 1 1 30%; justify-content: center; padding: 8px 4px;
+    font-size: 11px; text-align: center; gap: 5px;
+  }
+  .nav-item span { display: inline; }
+  .main { width: 100%; }
+  .topbar { height: auto; min-height: 58px; padding: 9px 12px; flex-wrap: wrap; gap: 6px; }
+  .topbar h2 { font-size: 16px; }
+  .topbar .meta { width: 100%; font-size: 11px; }
+  .page { padding: 10px; }
+  .card { margin-bottom: 12px; border-radius: 11px; }
+  .card-header { padding: 12px; gap: 8px; }
+  .card-body { padding: 12px; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 9px; }
+  .stat-card { padding: 12px; }
+  .stat-card .value { font-size: 22px; }
+  .filter-bar { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .sheet-table { overflow-x: auto; }
+  .sheet-grid { font-size: 10px; min-width: 620px; }
+  .sheet-grid th, .sheet-grid td { height: 30px; padding: 1px 2px; }
+  .sheet-grid td input { font-size: 11px; height: 26px; padding: 1px 3px; }
+  .sheet-banner { padding: 9px 12px; }
+  .sheet-banner-title { font-size: 15px; }
+  .sheet-actions-top { top: 0; z-index: 30; }
+  .sheet-submit { flex-direction: column; align-items: stretch; }
+  .sheet-submit-btn { width: 100%; justify-content: center; }
+  .data-table { font-size: 11px; min-width: 600px; }
+  .btn-row .btn { padding: 6px 8px; }
+  .modal { max-height: 94vh; }
+  .modal-footer { flex-wrap: wrap; }
+  .install-banner { top: 6px; padding: 8px; gap: 8px; }
+  .install-banner-icon { width: 32px; height: 32px; }
+  .install-banner-text { font-size: 12px; }
+  .toast { left: 10px; right: 10px; bottom: 10px; max-width: none; }
+}
+
+/* ---------- وضع الحاسوب (شاشات واسعة) ---------- */
+@media (min-width: 1400px) {
+  .page { max-width: 1560px; }
+  .sidebar { width: 260px; }
+  .stat-grid { grid-template-columns: repeat(5, 1fr); }
+  .sheet-grid { font-size: 14px; }
+  .sheet-grid td { height: 40px; }
 }

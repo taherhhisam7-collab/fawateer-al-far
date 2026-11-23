@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { FileSpreadsheet, Printer, MessageCircle, Search, RefreshCw } from 'lucide-react';
+import { FileSpreadsheet, Printer, MessageCircle, Search, RefreshCw, Eye, Pencil, Trash2 } from 'lucide-react';
 import { api, download, query, shareWhatsApp } from '../api';
 import { FilterBar, summaryText } from './ui.jsx';
 import InvoiceDetailModal from './InvoiceDetailModal.jsx';
 
-export default function Reports({ branches, users, notify, onPrint, onUpdate }) {
+export default function Reports({ branches, users, notify, onPrint, onUpdate, onEdit, onDelete }) {
   const [filters, setFilters] = useState({});
   const [invoices, setInvoices] = useState([]);
   const [detail, setDetail] = useState(null);
@@ -53,10 +53,12 @@ export default function Reports({ branches, users, notify, onPrint, onUpdate }) 
               <td>{t.listA?.invoices || '-'}</td><td>{t.listB?.invoices || '-'}</td>
               <td>{t.shifts?.total_amount || '-'}</td>
               <td><div className="btn-row">
-                <button className="btn btn-light btn-sm" onClick={() => open(i.id)}>عرض</button>
+                <button className="btn btn-light btn-sm" title="عرض" onClick={() => open(i.id)}><Eye size={14} /></button>
+                <button className="btn btn-light btn-sm" title="تعديل" onClick={() => onEdit && onEdit(i.id)}><Pencil size={14} /></button>
                 <button className="btn btn-light btn-sm" title="طباعة / PDF" onClick={async () => {
                   try { onPrint(await api(`/invoices/${i.id}`)); } catch (e) { notify(e.message, 'error'); }
                 }}><Printer size={14} /></button>
+                <button className="btn btn-danger btn-sm" title="حذف" onClick={() => onDelete && onDelete(i.id)}><Trash2 size={14} /></button>
               </div></td>
             </tr>;
           })}

@@ -33,7 +33,8 @@ function emptyForm(branchName) {
   };
 }
 
-export default function InvoiceForm({ initial, onSubmit, branchName, preview = false, submitLabel = 'حفظ النموذج' }) {
+export default function InvoiceForm({ initial, onSubmit, branchName, branches = [], allowBranch = false, onSaved, preview = false, submitLabel = 'حفظ' }) {
+  const [branchId, setBranchId] = useState(initial?.branch_id || '');
   const [form, setForm] = useState(() => initial ? {
     ...emptyForm(branchName), ...initial,
     listA: initial.listA?.length ? initial.listA : emptyForm(branchName).listA,
@@ -76,9 +77,10 @@ export default function InvoiceForm({ initial, onSubmit, branchName, preview = f
     setBusy(true);
     try {
       await onSubmit({
-        invoice_date: form.invoice_date, day_name: form.day_name, notes: form.notes,
+        branch_id: branchId || undefined, invoice_date: form.invoice_date, day_name: form.day_name, notes: form.notes,
         listA: form.listA, listB: form.listB, shifts: form.shifts, totals,
       });
+      onSaved?.();
       if (!initial) setForm(emptyForm(branchName));
     } finally { setBusy(false); }
   };
@@ -152,13 +154,32 @@ export default function InvoiceForm({ initial, onSubmit, branchName, preview = f
         <div className="sheet-banner-sub">{preview ? 'معاينة شاشة الإدخال — الإدخال الفعلي بحساب الكاشير' : 'أدخل بيانات الفواتير والمصروفات عن اليوم'}</div>
       </div>
 
+      <div className="sheet-actions-top">
+        <span className="muted">{allowBranch ? 'المحاسب: اختر الفرع ثم احفظ' : 'الكاشير: الفرع مُثبّت بحسابك'}</span>
+        {preview
+          ? <button className="btn btn-ghost btn-sm" type="button" disabled><Send size={15} /> معاينة فقط</button>
+          : <button className="btn sheet-submit-btn btn-sm" type="submit" disabled={busy}>
+              <Send size={15} /> {busy ? 'جاري الحفظ...' : 'حفظ'}
+            </button>}
+      </div>
+
       <ListTable keyName="listA" t={totals.listA} />
 
       <div className="sheet-meta">
-        <div className="meta-card">
-          <div className="meta-label"><Store size={15} /> اسم الفرع /</div>
-          <input value={branchName || ''} readOnly />
-        </div>
+        {allowBranch ? (
+          <div className="meta-card">
+            <div className="meta-label"><Store size={15} /> الفرع /</div>
+            <select value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+              <option value="">-- اختر الفرع --</option>
+              {branches.filter((b) => b.active).map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+            </select>
+          </div>
+        ) : (
+          <div className="meta-card">
+            <div className="meta-label"><Store size={15} /> اسم الفرع /</div>
+            <input value={branchName || ''} readOnly />
+          </div>
+        )}
         <div className="meta-card">
           <div className="meta-label"><CalendarDays size={15} /> التاريخ /</div>
           <input type="date" value={form.invoice_date} onChange={(e) => setField('invoice_date', e.target.value)} />

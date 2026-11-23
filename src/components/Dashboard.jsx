@@ -15,7 +15,7 @@ export default function Dashboard({ notify }) {
 
   return <>
     <div className="card">
-      <div className="card-header"><h3>لوحة التحكم المالية</h3>
+      <div className="card-header"><h3>لوحة التحكم</h3>
         <button className="btn btn-ghost btn-sm" onClick={load}><RefreshCw size={14} /> تحديث</button></div>
       <div className="card-body">
         <div className="stat-grid">

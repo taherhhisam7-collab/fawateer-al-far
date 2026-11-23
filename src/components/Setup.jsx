@@ -19,7 +19,7 @@ export default function Setup({ onDone, notify }) {
       <form className="login-card" onSubmit={submit}>
         <div className="login-logo"><FileSpreadsheet size={32} /></div>
         <h1>تفاصيل فواتير الخرج</h1>
-        <p className="sub">الإعداد الأولي — إنشاء حساب المالي والفرع الرئيسي</p>
+        <p className="sub">الإعداد الأولي — إنشاء حساب المحاسب والفرع الرئيسي</p>
         <div className="form-grid">
           <div className="field"><label>اسمك الكامل *</label>
             <input value={f.full_name} onChange={(e) => set('full_name', e.target.value)} required /></div>

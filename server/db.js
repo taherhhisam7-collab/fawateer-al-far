@@ -21,12 +21,37 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT NOT NULL UNIQUE COLLATE NOCASE,
   full_name TEXT NOT NULL,
   password_hash TEXT NOT NULL,
-  role TEXT NOT NULL CHECK(role IN ('finance','cashier')),
+  role TEXT NOT NULL CHECK(role IN ('accountant','finance','cashier')),
   branch_id INTEGER REFERENCES branches(id) ON DELETE SET NULL,
   active INTEGER NOT NULL DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 `);
+
+// ترقية الأدوار: مالي -> محاسب (مع قبول القيمة القديمة مؤقتاً للتوافق مع التوكنات المحفوظة)
+{
+  const sql = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='users'").get()?.sql || '';
+  if (sql.includes("'finance'") && !sql.includes("'accountant'")) {
+    db.pragma('foreign_keys = OFF');
+    db.exec(`
+      CREATE TABLE users_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+        full_name TEXT NOT NULL,
+        password_hash TEXT NOT NULL,
+        role TEXT NOT NULL CHECK(role IN ('accountant','finance','cashier')),
+        branch_id INTEGER REFERENCES branches(id) ON DELETE SET NULL,
+        active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      INSERT INTO users_new SELECT * FROM users;
+      DROP TABLE users;
+      ALTER TABLE users_new RENAME TO users;
+    `);
+    db.exec("UPDATE users SET role='accountant' WHERE role='finance'");
+    db.pragma('foreign_keys = ON');
+  }
+}
 
 // ترقية آمنة: إذا كان schema القديم موجوداً نُعيد إنشاء جداول الفواتير فقط (بدون مسح المستخدمين/الفروع)
 const oldCols = db.prepare('PRAGMA table_info(invoice_rows)').all().map((c) => c.name);

@@ -38,7 +38,7 @@ export default function Users({ users, branches, reload, notify }) {
           {users.length === 0 && <tr><td colSpan="7" className="center muted">لا يوجد مستخدمون — ابدأ بإضافة كاشير لكل فرع</td></tr>}
           {users.map((u, i) => <tr key={u.id}>
             <td>{i + 1}</td><td><b>{u.full_name}</b></td><td dir="ltr" style={{ textAlign: 'right' }}>{u.email}</td>
-            <td>{u.role === 'finance' ? 'مالي' : 'كاشير'}</td>
+            <td>{u.role === 'cashier' ? 'كاشير' : 'محاسب'}</td>
             <td>{u.branch_name || <span className="muted">—</span>}</td>
             <td><span className={`badge ${u.active ? 'badge-submitted' : 'badge-draft'}`}>{u.active ? 'نشط' : 'معطل'}</span></td>
             <td><div className="btn-row">
@@ -58,8 +58,8 @@ export default function Users({ users, branches, reload, notify }) {
         <div className="field"><label>كلمة المرور {editing.id && '(اتركها فارغة للإبقاء)'}</label>
           <input type="password" value={form.password || ''} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
         <div className="field"><label>الدور</label>
-          <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value, branch_id: e.target.value === 'finance' ? '' : form.branch_id })}>
-            <option value="cashier">كاشير</option><option value="finance">مالي</option>
+          <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value, branch_id: e.target.value === 'accountant' ? '' : form.branch_id })}>
+            <option value="cashier">كاشير</option><option value="accountant">محاسب</option>
           </select></div>
         {form.role === 'cashier' && <div className="field"><label>الفرع * (إجباري)</label>
           <select value={form.branch_id || ''} onChange={(e) => setForm({ ...form, branch_id: e.target.value })}>

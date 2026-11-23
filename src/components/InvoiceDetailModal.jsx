@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileSpreadsheet, Printer, MessageCircle, Trash2, X } from 'lucide-react';
+import { FileSpreadsheet, Printer, MessageCircle, Trash2, X, Pencil } from 'lucide-react';
 import { api, download, shareWhatsApp } from '../api';
 import { Modal } from './ui.jsx';
 
@@ -21,7 +21,7 @@ function Table({ title, headers, keys, rows, totals }) {
   </>;
 }
 
-export default function InvoiceDetailModal({ invoice, onClose, onUpdate, onPrint, notify }) {
+export default function InvoiceDetailModal({ invoice, onClose, onUpdate, onPrint, onEdit, notify }) {
   if (!invoice) return null;
   const share = () => shareWhatsApp([
     `*تفاصيل فواتير الفرع - ${invoice.code}*`,
@@ -43,6 +43,7 @@ export default function InvoiceDetailModal({ invoice, onClose, onUpdate, onPrint
         .catch((e) => notify(e.message, 'error'))}><FileSpreadsheet size={15} /> Excel</button>
       <button className="btn btn-light" onClick={() => onPrint(invoice)}><Printer size={15} /> طباعة / PDF</button>
       <button className="btn btn-wa" onClick={share}><MessageCircle size={15} /> واتساب</button>
+      {onEdit && <button className="btn btn-light" onClick={() => onEdit(invoice)}><Pencil size={15} /> تعديل</button>}
       <button className="btn btn-danger btn-sm" onClick={remove}><Trash2 size={15} /> حذف</button>
       <button className="btn btn-ghost" onClick={onClose}><X size={15} /> إغلاق</button>
     </>}>

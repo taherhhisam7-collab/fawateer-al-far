@@ -21,12 +21,14 @@ function auth(req, res, next) {
   try { req.user = jwt.verify(t, SECRET); next(); }
   catch { res.status(401).json({ message: 'انتهت الجلسة، يرجى تسجيل الدخول مجدداً' }); }
 }
+const isAcc = (role) => role === 'accountant' || role === 'finance';
 function finance(req, res, next) {
-  if (req.user.role !== 'finance') return res.status(403).json({ message: 'هذا الإجراء للمالي فقط' });
+  if (!isAcc(req.user.role)) return res.status(403).json({ message: 'هذا الإجراء للمحاسب فقط' });
   next();
 }
 function pub(u) {
-  return { id: u.id, email: u.email, full_name: u.full_name, role: u.role,
+  return { id: u.id, email: u.email, full_name: u.full_name,
+    role: u.role === 'finance' ? 'accountant' : u.role,
     branch_id: u.branch_id, branch_name: u.branch_name, active: !!u.active };
 }
 function withBranch(u) {
@@ -49,7 +51,7 @@ app.post('/api/setup', (req, res) => {
     const b = db.prepare('INSERT INTO branches (name, code) VALUES (?,?)')
       .run(String(branch_name).trim(), 'MAIN');
     const u = db.prepare(`INSERT INTO users (email,full_name,password_hash,role,branch_id)
-      VALUES (?,?,?, 'finance', ?)`).run(String(email).trim(), String(full_name).trim(),
+      VALUES (?,?,?, 'accountant', ?)`).run(String(email).trim(), String(full_name).trim(),
         bcrypt.hashSync(String(password), 10), b.lastInsertRowid);
     return db.prepare('SELECT * FROM users WHERE id=?').get(u.lastInsertRowid);
   })();
@@ -124,14 +126,15 @@ app.get('/api/users', auth, finance, (req, res) => {
 app.post('/api/users', auth, finance, (req, res) => {
   const { email, full_name, password, role, branch_id } = req.body || {};
   if (!email || !full_name || !password) return res.status(400).json({ message: 'البريد والاسم وكلمة المرور مطلوبة' });
-  if (!['finance', 'cashier'].includes(role)) return res.status(400).json({ message: 'دور غير صالح' });
-  if (role === 'cashier' && !branch_id) return res.status(400).json({ message: 'الكاشير يجب أن يكون مرتبطاً بفرع' });
+  const finalRole = role === 'finance' ? 'accountant' : role;
+  if (!['accountant', 'cashier'].includes(finalRole)) return res.status(400).json({ message: 'دور غير صالح' });
+  if (finalRole === 'cashier' && !branch_id) return res.status(400).json({ message: 'الكاشير يجب أن يكون مرتبطاً بفرع' });
   if (branch_id && !db.prepare('SELECT id FROM branches WHERE id=?').get(branch_id))
     return res.status(400).json({ message: 'الفرع غير موجود' });
   try {
     const r = db.prepare(`INSERT INTO users (email,full_name,password_hash,role,branch_id)
       VALUES (?,?,?,?,?)`).run(String(email).trim(), String(full_name).trim(),
-        bcrypt.hashSync(String(password), 10), role, branch_id || null);
+        bcrypt.hashSync(String(password), 10), finalRole, branch_id || null);
     res.status(201).json(withBranch(db.prepare('SELECT * FROM users WHERE id=?').get(r.lastInsertRowid)));
   } catch { res.status(400).json({ message: 'البريد مستخدم مسبقاً' }); }
 });
@@ -139,10 +142,11 @@ app.put('/api/users/:id', auth, finance, (req, res) => {
   const { email, full_name, role, branch_id, active, password } = req.body || {};
   const u = db.prepare('SELECT * FROM users WHERE id=?').get(req.params.id);
   if (!u) return res.status(404).json({ message: 'المستخدم غير موجود' });
-  if (role === 'cashier' && !branch_id) return res.status(400).json({ message: 'الكاشير يجب أن يكون مرتبطاً بفرع' });
+  const finalRole = role === 'finance' ? 'accountant' : (role || u.role);
+  if (finalRole === 'cashier' && !branch_id) return res.status(400).json({ message: 'الكاشير يجب أن يكون مرتبطاً بفرع' });
   try {
     db.prepare('UPDATE users SET email=?,full_name=?,role=?,branch_id=?,active=? WHERE id=?')
-      .run(String(email || u.email).trim(), String(full_name || u.full_name).trim(), role || u.role,
+      .run(String(email || u.email).trim(), String(full_name || u.full_name).trim(), finalRole,
         branch_id || null, active === false ? 0 : 1, u.id);
     if (password) db.prepare('UPDATE users SET password_hash=? WHERE id=?')
       .run(bcrypt.hashSync(String(password), 10), u.id);
@@ -206,14 +210,15 @@ app.get('/api/invoices/:id', auth, finance, (req, res) => {
 
 // الكاشير: إدخال فقط — الفرع يُؤخذ من حسابه ويُ تجاهل أي فرع مرسل من الواجهة
 app.post('/api/invoices', auth, (req, res) => {
-  if (!req.user.branch_id) return res.status(400).json({ message: 'حسابك غير مرتبط بفرع — راجع المالي' });
-  if (!db.prepare('SELECT id FROM branches WHERE id=? AND active=1').get(req.user.branch_id))
-    return res.status(400).json({ message: 'فرعك غير نشط — راجع المالي' });
   const b = req.body || {};
+  const branchId = isAcc(req.user.role) ? (b.branch_id || req.user.branch_id) : req.user.branch_id;
+  if (!branchId) return res.status(400).json({ message: 'اختر الفرع أو راجع المحاسب' });
+  if (!db.prepare('SELECT id FROM branches WHERE id=? AND active=1').get(branchId))
+    return res.status(400).json({ message: 'الفرع غير نشط — راجع المحاسب' });
   const id = db.transaction(() => {
     const info = db.prepare(`INSERT INTO invoices
       (code,user_id,branch_id,invoice_date,day_name,notes,totals)
-      VALUES (?,?,?,?,?,?,?)`).run(nextCode(), req.user.id, req.user.branch_id, ...invoiceFields(b));
+      VALUES (?,?,?,?,?,?,?)`).run(nextCode(), req.user.id, branchId, ...invoiceFields(b));
     saveLines(info.lastInsertRowid, b);
     return info.lastInsertRowid;
   })();
@@ -221,14 +226,15 @@ app.post('/api/invoices', auth, (req, res) => {
     message: 'تم إدخال الفاتورة بنجاح' });
 });
 
-// المالي فقط: تعديل/حذف للمراجعة والتصحيح
+// المحاسب فقط: تعديل/حذف/إدخال كامل
 app.put('/api/invoices/:id', auth, finance, (req, res) => {
   const i = R.getInvoice(db, req.params.id, req.user);
   if (!i) return res.status(404).json({ message: 'الفاتورة غير موجودة' });
   const b = req.body || {};
   db.transaction(() => {
-    db.prepare(`UPDATE invoices SET invoice_date=?,day_name=?,notes=?,totals=? WHERE id=?`)
-      .run(...invoiceFields(b), i.id);
+    const branchId = b.branch_id || i.branch_id;
+    db.prepare(`UPDATE invoices SET branch_id=?,invoice_date=?,day_name=?,notes=?,totals=? WHERE id=?`)
+      .run(branchId, ...invoiceFields(b), i.id);
     saveLines(i.id, b);
   })();
   res.json({ message: 'تم حفظ التعديلات' });

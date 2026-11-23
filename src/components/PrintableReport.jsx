@@ -55,7 +55,7 @@ export default function PrintableReport({ data, onDone }) {
     <div className="print-sign">
       <div>اسم الكاشير: .............................</div>
       <div>توقيع الكاشير: .............................</div>
-      <div>اعتماد المالي: .............................</div>
+      <div>اعتماد المحاسب: .............................</div>
     </div>
   </div></div>, document.body);
 }

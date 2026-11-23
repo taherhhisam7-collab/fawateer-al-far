@@ -19,7 +19,7 @@ export default function Login({ onLogin, notify }) {
       <form className="login-card" onSubmit={submit}>
         <div className="login-logo"><FileSpreadsheet size={32} /></div>
         <h1>تفاصيل فواتير الخرج</h1>
-        <p className="sub">تسجيل الدخول — مالي / كاشير</p>
+        <p className="sub">تسجيل الدخول — محاسب / كاشير</p>
         <div className="field" style={{ marginBottom: 14 }}>
           <label>البريد الإلكتروني</label>
           <div style={{ position: 'relative' }}>
@@ -40,7 +40,7 @@ export default function Login({ onLogin, notify }) {
           <LogIn size={17} /> {busy ? 'جاري الدخول...' : 'دخول'}
         </button>
         <div className="login-hint">
-          <ShieldCheck size={15} /> الحسابات تُنشأ من قِبل المالي فقط.<br />
+          <ShieldCheck size={15} /> الحسابات تُنشأ من قِبل المحاسب فقط.<br />
           <Store size={15} /> الكاشير يرى فرعه فقط ولا يدخل إلا فواتيره.
         </div>
       </form>
