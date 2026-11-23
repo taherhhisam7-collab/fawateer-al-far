@@ -192,7 +192,11 @@ function saveLines(id, b) {
 }
 function nextCode() {
   const y = new Date().getFullYear();
-  const n = db.prepare('SELECT COUNT(*) n FROM invoices').get().n + 1;
+  // لا نعتمد على العدد (قد يكون حُذف سجل فيتكرر الرقم) — نأخذ أكبر raqam مستخدم + 1
+  const row = db.prepare(`SELECT code FROM invoices WHERE code LIKE ?
+    ORDER BY CAST(SUBSTR(code, 10) AS INTEGER) DESC LIMIT 1`).get(`FKH-${y}-%`);
+  const m = row && row.code.match(/-(\d+)$/);
+  const n = m ? Number(m[1]) + 1 : 1;
   return `FKH-${y}-${String(n).padStart(4, '0')}`;
 }
 function invoiceFields(b) {

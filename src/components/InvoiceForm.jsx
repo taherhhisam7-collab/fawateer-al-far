@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Plus, Trash2, Send, Calculator, CalendarDays, Store, Sun, Moon } from 'lucide-react';
 
 const LIST_HEADERS = ['المورد أو بيان الصرف', 'الفواتير', 'المدفوعات', 'الباقي', 'ملاحظات'];
+const LIST_SUBS = ['', '(إجمالي مبلغ الفاتورة)', '(المبلغ المدفوع)', '(المتبقي من الفاتورة بعد خصم المدفوع)', ''];
 const LIST_KEYS = ['supplier', 'invoices', 'payments', 'remaining', 'notes'];
 const SHIFT_HEADERS = ['الشفت', 'إجمالي الكاش', 'الشبكة', 'الفرع (الصرف)', 'صافي الكاش', 'إجمالي الدخل'];
 const SHIFT_KEYS = ['shift_label', 'total_cash', 'network', 'branch_expense', 'net_cash', 'total_amount'];
@@ -43,7 +44,9 @@ function ListTable({ rows, totals, onCell, onDel, onAdd }) {
           <col style={{ width: '17%' }} /><col style={{ width: '19%' }} /><col style={{ width: 36 }} />
         </colgroup>
         <thead><tr>
-          {LIST_HEADERS.map((h, i) => <th key={h} className={i === 3 ? 'calc-col' : ''}>{h}</th>)}
+          {LIST_HEADERS.map((h, i) => <th key={h} className={i === 3 ? 'calc-col' : ''}>
+            {h}{LIST_SUBS[i] && <small className="th-sub">{LIST_SUBS[i]}</small>}
+          </th>)}
           <th className="act-col"></th>
         </tr></thead>
         <tbody>
@@ -51,9 +54,9 @@ function ListTable({ rows, totals, onCell, onDel, onAdd }) {
             <tr key={i}>
               {LIST_KEYS.map((k, ki) => (
                 <td key={k} className={ki === 3 ? 'calc-col' : ''}>
-                  <input value={r[k] ?? ''} inputMode={ki === 2 || ki === 3 ? 'decimal' : 'text'}
-                    dir={ki === 2 || ki === 3 ? 'ltr' : 'rtl'}
-                    className={ki === 2 || ki === 3 ? 'num-input' : ''}
+                  <input value={r[k] ?? ''} inputMode={ki === 1 || ki === 2 || ki === 3 ? 'decimal' : 'text'}
+                    dir={ki === 1 || ki === 2 || ki === 3 ? 'ltr' : 'rtl'}
+                    className={ki === 1 || ki === 2 || ki === 3 ? 'num-input' : ''}
                     onChange={(e) => onCell(i, k, e.target.value)} />
                 </td>
               ))}
@@ -133,7 +136,10 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
     ...f, [section]: f[section].map((r, idx) => {
       if (idx !== i) return r;
       const next = { ...r, [k]: v };
-      // عمود «الفواتير» نص حر، و«الباقي» يُدخل يدوياً — لا معادلة بينهما
+      if (section === 'listA' || section === 'listB') {
+        // إجمالي الفاتورة − المدفوع = المتبقي
+        if (k === 'invoices' || k === 'payments') next.remaining = calc(next.invoices, next.payments);
+      }
       if (section === 'shifts') {
         if (k === 'total_cash' || k === 'branch_expense') next.net_cash = calc(next.total_cash, next.branch_expense);
         if (k === 'total_cash' || k === 'branch_expense' || k === 'network') {
@@ -147,8 +153,8 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
   const delRow = (key, i) => setForm((f) => ({ ...f, [key]: f[key].filter((_, idx) => idx !== i) }));
 
   const totals = useMemo(() => ({
-    listA: { invoices: '', payments: sum(form.listA, 'payments'), remaining: sum(form.listA, 'remaining') },
-    listB: { invoices: '', payments: sum(form.listB, 'payments'), remaining: sum(form.listB, 'remaining') },
+    listA: { invoices: sum(form.listA, 'invoices'), payments: sum(form.listA, 'payments'), remaining: sum(form.listA, 'remaining') },
+    listB: { invoices: sum(form.listB, 'invoices'), payments: sum(form.listB, 'payments'), remaining: sum(form.listB, 'remaining') },
     shifts: Object.fromEntries(SHIFT_KEYS.filter((k) => k !== 'shift_label').map((k) => [k, sum(form.shifts, k)])),
     difference: (() => {
       const payments = sum(form.listB, 'payments');
@@ -243,7 +249,7 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
 
       <div className="sheet-submit">
         <div className="sheet-hint">
-          <Calculator size={16} /> عمود «الفواتير» نص حر، و«صافي الكاش» و«إجمالي الدخل» يُحسبان تلقائياً.
+          <Calculator size={16} /> المتبقي = إجمالي الفاتورة − المدفوع، وصافي الكاش وإجمالي الدخل يُحسبان تلقائياً.
         </div>
         {preview
           ? <button className="btn btn-ghost" type="button" disabled><Send size={16} /> معاينة فقط</button>

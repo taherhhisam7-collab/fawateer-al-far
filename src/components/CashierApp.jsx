@@ -55,16 +55,19 @@ export default function CashierApp({ user, onLogout, notify }) {
           <button className="btn btn-ghost btn-sm" onClick={load}><RefreshCw size={14} /> تحديث</button></div>
         <div className="table-scroll"><table className="data-table">
           <thead><tr><th>الرقم</th><th>الفرع</th><th>التاريخ</th><th>اليوم</th>
-            <th>المورد</th><th>المدفوعات</th><th>إجمالي الدخل</th><th>الإجراءات</th></tr></thead>
+            <th>المورد</th><th>الفواتير</th><th>المدفوعات</th><th>إجمالي الدخل</th><th>الفرق</th><th>الإجراءات</th></tr></thead>
           <tbody>
-            {records.length === 0 && <tr><td colSpan="8" className="center muted">لا توجد حركات بعد — احفظ أول فاتورة لتظهر هنا</td></tr>}
+            {records.length === 0 && <tr><td colSpan="10" className="center muted">لا توجد حركات بعد — احفظ أول فاتورة لتظهر هنا</td></tr>}
             {records.map((r) => {
               let t = {}; try { t = JSON.parse(r.totals || '{}'); } catch { /* ignore */ }
               return <tr key={r.id}>
                 <td><b>{r.code}</b></td><td>{r.branch_name}</td>
                 <td>{r.invoice_date || '-'}</td><td>{r.day_name || '-'}</td>
-                <td>{r.first_supplier || '-'}</td><td>{t.listB?.payments || '0'}</td>
+                <td>{r.first_supplier || '-'}</td><td>{t.listB?.invoices || '0'}</td>
+                <td>{t.listB?.payments || '0'}</td>
                 <td>{t.shifts?.total_amount || '0'}</td>
+                <td className={t.difference?.state === 'plus' ? 'diff-plus' : t.difference?.state === 'minus' ? 'diff-minus' : ''}>
+                  {t.difference?.text || '-'}</td>
                 <td><button className="btn btn-light btn-sm" title="عرض" onClick={() => open(r.id)}><Eye size={14} /></button></td>
               </tr>;
             })}

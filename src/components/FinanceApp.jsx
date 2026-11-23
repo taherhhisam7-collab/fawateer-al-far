@@ -80,14 +80,14 @@ export default function FinanceApp({ user, onLogout, notify }) {
       <button className="nav-item" onClick={() => setTab('settings')}>
         <KeyRound size={18} /><span>إعدادات الحساب</span></button>
       <div className="sidebar-user">
-        <strong>{user.full_name}</strong><small>محاسب - صلاحيات كاملة</small>
+        <strong>{user.full_name}</strong><small>محاسب (المالك) — كل الصلاحيات</small>
         <button className="logout-btn" onClick={onLogout}><LogOut size={15} /> تسجيل الخروج</button>
       </div>
     </aside>
 
     <main className="main">
       <header className="topbar"><h2>{TITLES[tab]}</h2>
-        <div className="meta"><ShieldCheck size={15} /> صلاحية المحاسب</div></header>
+        <div className="meta"><ShieldCheck size={15} /> صلاحية المالك — كل شي مسموح</div></header>
       <div className="page">
         {tab === 'dashboard' && <Dashboard notify={notify} />}
 
