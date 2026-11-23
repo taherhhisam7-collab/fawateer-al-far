@@ -33,6 +33,89 @@ function emptyForm(branchName) {
   };
 }
 
+/* مكوّنات خارجية ثابتة — حتى لا يُعاد تركيب الإدخال عند كل حرف */
+function ListTable({ rows, totals, onCell, onDel, onAdd }) {
+  return (
+    <div className="sheet-table">
+      <table className="sheet-grid list-grid">
+        <colgroup>
+          <col style={{ width: '30%' }} /><col style={{ width: '17%' }} /><col style={{ width: '17%' }} />
+          <col style={{ width: '17%' }} /><col style={{ width: '19%' }} /><col style={{ width: 36 }} />
+        </colgroup>
+        <thead><tr>
+          {LIST_HEADERS.map((h, i) => <th key={h} className={i === 3 ? 'calc-col' : ''}>{h}</th>)}
+          <th className="act-col"></th>
+        </tr></thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={i}>
+              {LIST_KEYS.map((k, ki) => (
+                <td key={k} className={ki === 3 ? 'calc-col' : ''}>
+                  <input value={r[k] ?? ''} inputMode={ki === 1 || ki === 2 ? 'decimal' : 'text'}
+                    dir={ki === 1 || ki === 2 || ki === 3 ? 'ltr' : 'rtl'}
+                    className={ki === 1 || ki === 2 || ki === 3 ? 'num-input' : ''}
+                    onChange={(e) => onCell(i, k, e.target.value)} />
+                </td>
+              ))}
+              <td className="act-col"><button type="button" className="sheet-del" title="حذف الصف"
+                onClick={() => onDel(i)}><Trash2 size={14} /></button></td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot><tr>
+          <td>الإجمالي</td>
+          <td><b>{totals.invoices}</b></td><td><b>{totals.payments}</b></td>
+          <td className="calc-col"><b>{totals.remaining}</b></td>
+          <td></td><td className="act-col"></td>
+        </tr></tfoot>
+      </table>
+      <button type="button" className="add-row" onClick={onAdd}><Plus size={13} /> إضافة صف</button>
+    </div>
+  );
+}
+
+function ShiftTable({ rows, totals, onCell, onDel, onAdd }) {
+  return (
+    <div className="sheet-table shift-block">
+      <table className="sheet-grid shift-grid">
+        <colgroup>
+          <col style={{ width: '14%' }} />
+          {SHIFT_KEYS.slice(1).map((k) => <col key={k} style={{ width: '14.3%' }} />)}
+          <col style={{ width: 36 }} />
+        </colgroup>
+        <thead><tr>{SHIFT_HEADERS.map((h) => <th key={h}>{h}</th>)}<th className="act-col"></th></tr></thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={i}>
+              {SHIFT_KEYS.map((k, ki) => (
+                <td key={k} className={ki >= 4 ? 'calc-col' : ''}>
+                  {ki === 0 ? (
+                    <div className="shift-label">
+                      {r.shift_label === 'صباحي' ? <Sun size={15} /> : r.shift_label === 'مسائي' ? <Moon size={15} /> : null}
+                      <input value={r.shift_label} onChange={(e) => onCell(i, k, e.target.value)} />
+                    </div>
+                  ) : (
+                    <input value={r[k] ?? ''} inputMode="decimal" dir="ltr" className="num-input"
+                      readOnly={ki >= 4} onChange={(e) => onCell(i, k, e.target.value)} />
+                  )}
+                </td>
+              ))}
+              <td className="act-col"><button type="button" className="sheet-del" onClick={() => onDel(i)}>
+                <Trash2 size={14} /></button></td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot><tr>
+          <td>الإجمالي</td>
+          {SHIFT_KEYS.slice(1).map((k) => <td key={k}><b>{totals[k]}</b></td>)}
+          <td className="act-col"></td>
+        </tr></tfoot>
+      </table>
+      <button type="button" className="add-row" onClick={onAdd}><Plus size={13} /> إضافة شفت</button>
+    </div>
+  );
+}
+
 export default function InvoiceForm({ initial, onSubmit, branchName, branches = [], allowBranch = false, onSaved, preview = false, submitLabel = 'حفظ' }) {
   const [branchId, setBranchId] = useState(initial?.branch_id || '');
   const [form, setForm] = useState(() => initial ? {
@@ -46,14 +129,14 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
   const setField = (k, v) => setForm((f) => ({
     ...f, [k]: v, ...(k === 'invoice_date' ? { day_name: dayName(v) } : {}),
   }));
-  const setCell = (key, i, k, v) => setForm((f) => ({
-    ...f, [key]: f[key].map((r, idx) => {
+  const setCell = (section, i, k, v) => setForm((f) => ({
+    ...f, [section]: f[section].map((r, idx) => {
       if (idx !== i) return r;
       const next = { ...r, [k]: v };
-      if (key === 'listA' || key === 'listB') {
+      if (section === 'listA' || section === 'listB') {
         if (k === 'invoices' || k === 'payments') next.remaining = calc(next.invoices, next.payments);
       }
-      if (key === 'shifts') {
+      if (section === 'shifts') {
         if (k === 'total_cash' || k === 'branch_expense') next.net_cash = calc(next.total_cash, next.branch_expense);
         if (k === 'total_cash' || k === 'branch_expense' || k === 'network') {
           next.total_amount = String(num(next.net_cash) + num(next.network));
@@ -85,79 +168,6 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
     } finally { setBusy(false); }
   };
 
-  const ListTable = ({ keyName, t }) => (
-    <div className="sheet-table">
-      <table className="sheet-grid list-grid">
-        <colgroup>
-          <col style={{ width: '30%' }} /><col style={{ width: '17%' }} /><col style={{ width: '17%' }} />
-          <col style={{ width: '17%' }} /><col style={{ width: '19%' }} /><col style={{ width: 36 }} />
-        </colgroup>
-        <thead><tr>
-          {LIST_HEADERS.map((h, i) => <th key={h} className={i === 3 ? 'calc-col' : ''}>{h}</th>)}
-          <th className="act-col"></th>
-        </tr></thead>
-        <tbody>
-          {form[keyName].map((r, i) => <tr key={i}>
-            {LIST_KEYS.map((k, ki) => (
-              <td key={k} className={ki === 3 ? 'calc-col' : ''}>
-                <input value={r[k] ?? ''} inputMode={ki === 1 || ki === 2 ? 'decimal' : 'text'}
-                  dir={ki === 1 || ki === 2 || ki === 3 ? 'ltr' : 'rtl'}
-                  className={ki === 1 || ki === 2 || ki === 3 ? 'num-input' : ''}
-                  onChange={(e) => setCell(keyName, i, k, e.target.value)} />
-              </td>
-            ))}
-            <td className="act-col"><button type="button" className="sheet-del" title="حذف الصف"
-              onClick={() => delRow(keyName, i)}><Trash2 size={14} /></button></td>
-          </tr>)}
-        </tbody>
-        <tfoot><tr>
-          <td>الإجمالي</td>
-          <td><b>{t.invoices}</b></td><td><b>{t.payments}</b></td><td className="calc-col"><b>{t.remaining}</b></td>
-          <td></td><td className="act-col"></td>
-        </tr></tfoot>
-      </table>
-      <button type="button" className="add-row" onClick={() => addRow(keyName, blank)}><Plus size={13} /> إضافة صف</button>
-    </div>
-  );
-
-  const ShiftTable = () => (
-    <div className="sheet-table shift-block">
-      <table className="sheet-grid shift-grid">
-        <colgroup>
-          <col style={{ width: '14%' }} />
-          {SHIFT_KEYS.slice(1).map((k) => <col key={k} style={{ width: '14.3%' }} />)}
-          <col style={{ width: 36 }} />
-        </colgroup>
-        <thead><tr>{SHIFT_HEADERS.map((h) => <th key={h}>{h}</th>)}<th className="act-col"></th></tr></thead>
-        <tbody>
-          {form.shifts.map((r, i) => <tr key={i}>
-            {SHIFT_KEYS.map((k, ki) => (
-              <td key={k} className={ki >= 4 ? 'calc-col' : ''}>
-                {ki === 0 ? (
-                  <div className="shift-label">
-                    {r.shift_label === 'صباحي' ? <Sun size={15} /> : r.shift_label === 'مسائي' ? <Moon size={15} /> : null}
-                    <input value={r.shift_label} onChange={(e) => setCell('shifts', i, k, e.target.value)} />
-                  </div>
-                ) : (
-                  <input value={r[k] ?? ''} inputMode="decimal" dir="ltr" className="num-input" readOnly={ki >= 4}
-                    onChange={(e) => setCell('shifts', i, k, e.target.value)} />
-                )}
-              </td>
-            ))}
-            <td className="act-col"><button type="button" className="sheet-del" onClick={() => delRow('shifts', i)}>
-              <Trash2 size={14} /></button></td>
-          </tr>)}
-        </tbody>
-        <tfoot><tr>
-          <td>الإجمالي</td>
-          {SHIFT_KEYS.slice(1).map((k) => <td key={k}><b>{totals.shifts[k]}</b></td>)}
-          <td className="act-col"></td>
-        </tr></tfoot>
-      </table>
-      <button type="button" className="add-row" onClick={() => addRow('shifts', () => blankShift())}><Plus size={13} /> إضافة شفت</button>
-    </div>
-  );
-
   return (
     <form className="invoice-sheet" onSubmit={submit}>
       <div className="sheet-banner">
@@ -174,7 +184,9 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
             </button>}
       </div>
 
-      <ListTable keyName="listA" t={totals.listA} />
+      <ListTable rows={form.listA} totals={totals.listA}
+        onCell={(i, k, v) => setCell('listA', i, k, v)}
+        onDel={(i) => delRow('listA', i)} onAdd={() => addRow('listA', blank)} />
 
       <div className="sheet-meta">
         {allowBranch ? (
@@ -201,13 +213,17 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
         </div>
       </div>
 
-      <ShiftTable />
+      <ShiftTable rows={form.shifts} totals={totals.shifts}
+        onCell={(i, k, v) => setCell('shifts', i, k, v)}
+        onDel={(i) => delRow('shifts', i)} onAdd={() => addRow('shifts', () => blankShift())} />
 
       <div className="sheet-banner second">
         <div className="sheet-banner-title"><span className="gold-line" /> تفاصيل فواتير الفرع</div>
         <div className="sheet-banner-sub">القائمة الثانية — إدخال إضافي لنفس اليوم</div>
       </div>
-      <ListTable keyName="listB" t={totals.listB} />
+      <ListTable rows={form.listB} totals={totals.listB}
+        onCell={(i, k, v) => setCell('listB', i, k, v)}
+        onDel={(i) => delRow('listB', i)} onAdd={() => addRow('listB', blank)} />
 
       <div className="sheet-submit">
         <div className="sheet-hint">
