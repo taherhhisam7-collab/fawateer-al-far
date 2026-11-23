@@ -48,8 +48,8 @@ app.post('/api/setup', (req, res) => {
     return res.status(400).json({ message: 'الاسم والبريد وكلمة المرور واسم الفرع مطلوبة' });
   if (String(password).length < 6) return res.status(400).json({ message: 'كلمة المرور 6 أحرف على الأقل' });
   const result = db.transaction(() => {
-    const b = db.prepare('INSERT INTO branches (name, code) VALUES (?,?)')
-      .run(String(branch_name).trim(), 'MAIN');
+    const b = db.prepare('INSERT INTO branches (name, code, city) VALUES (?,?,?)')
+      .run(String(branch_name).trim(), 'MAIN', 'المدينة المنورة');
     const u = db.prepare(`INSERT INTO users (email,full_name,password_hash,role,branch_id)
       VALUES (?,?,?, 'accountant', ?)`).run(String(email).trim(), String(full_name).trim(),
         bcrypt.hashSync(String(password), 10), b.lastInsertRowid);
@@ -128,7 +128,7 @@ app.post('/api/users', auth, finance, (req, res) => {
   if (!email || !full_name || !password) return res.status(400).json({ message: 'البريد والاسم وكلمة المرور مطلوبة' });
   const finalRole = role === 'finance' ? 'accountant' : role;
   if (!['accountant', 'cashier'].includes(finalRole)) return res.status(400).json({ message: 'دور غير صالح' });
-  if (finalRole === 'cashier' && !branch_id) return res.status(400).json({ message: 'الكاشير يجب أن يكون مرتبطاً بفرع' });
+  if (!branch_id) return res.status(400).json({ message: 'لازم تختار الفرع وتربط المستخدم به قبل الحفظ' });
   if (branch_id && !db.prepare('SELECT id FROM branches WHERE id=?').get(branch_id))
     return res.status(400).json({ message: 'الفرع غير موجود' });
   try {
@@ -143,7 +143,7 @@ app.put('/api/users/:id', auth, finance, (req, res) => {
   const u = db.prepare('SELECT * FROM users WHERE id=?').get(req.params.id);
   if (!u) return res.status(404).json({ message: 'المستخدم غير موجود' });
   const finalRole = role === 'finance' ? 'accountant' : (role || u.role);
-  if (finalRole === 'cashier' && !branch_id) return res.status(400).json({ message: 'الكاشير يجب أن يكون مرتبطاً بفرع' });
+  if (!branch_id) return res.status(400).json({ message: 'لازم تختار الفرع وتربط المستخدم به قبل الحفظ' });
   try {
     db.prepare('UPDATE users SET email=?,full_name=?,role=?,branch_id=?,active=? WHERE id=?')
       .run(String(email || u.email).trim(), String(full_name || u.full_name).trim(), finalRole,
@@ -152,6 +152,14 @@ app.put('/api/users/:id', auth, finance, (req, res) => {
       .run(bcrypt.hashSync(String(password), 10), u.id);
     res.json(withBranch(db.prepare('SELECT * FROM users WHERE id=?').get(u.id)));
   } catch { res.status(400).json({ message: 'البريد مستخدم مسبقاً' }); }
+});
+app.post('/api/users/:id/reset-password', auth, finance, (req, res) => {
+  const password = String((req.body || {}).password || '');
+  if (password.length < 6) return res.status(400).json({ message: 'كلمة المرور 6 أحرف على الأقل' });
+  const u = db.prepare('SELECT id FROM users WHERE id=?').get(req.params.id);
+  if (!u) return res.status(404).json({ message: 'المستخدم غير موجود' });
+  db.prepare('UPDATE users SET password_hash=? WHERE id=?').run(bcrypt.hashSync(password, 10), u.id);
+  res.json({ message: 'تم تغيير كلمة المرور' });
 });
 app.delete('/api/users/:id', auth, finance, (req, res) => {
   if (Number(req.params.id) === req.user.id) return res.status(400).json({ message: 'لا يمكن حذف حسابك' });

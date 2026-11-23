@@ -1,19 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { Download, Smartphone, Share2, CheckCircle2, X } from 'lucide-react';
+import { Smartphone, Share2, CheckCircle2, Download } from 'lucide-react';
 
 const DONE = 'fawateer_install_done';
 
 export default function InstallGate() {
   const [deferred, setDeferred] = useState(null);
-  const [dismissed, setDismissed] = useState(() => localStorage.getItem(DONE) === '1');
+  const [done, setDone] = useState(() => localStorage.getItem(DONE) === '1');
   const [isIOS, setIsIOS] = useState(false);
-  const [showSteps, setShowSteps] = useState(false);
+  const [steps, setSteps] = useState(false);
 
   useEffect(() => {
-    const ua = navigator.userAgent.toLowerCase();
-    setIsIOS(/iphone|ipad|ipod/.test(ua) && !window.navigator.standalone);
+    setIsIOS(/iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase()) && !window.navigator.standalone);
     const onPrompt = (e) => { e.preventDefault(); setDeferred(e); };
-    const onInstalled = () => close();
+    const onInstalled = () => finish();
     window.addEventListener('beforeinstallprompt', onPrompt);
     window.addEventListener('appinstalled', onInstalled);
     return () => {
@@ -22,41 +21,48 @@ export default function InstallGate() {
     };
   }, []);
 
-  const close = () => { localStorage.setItem(DONE, '1'); setDismissed(true); setDeferred(null); };
+  const finish = () => { localStorage.setItem(DONE, '1'); setDone(true); setDeferred(null); };
 
   const install = async () => {
     if (deferred) {
-      await deferred.prompt();
-      await deferred.userChoice;
-      close(); // سواء وافق أو ألغى، لا نحجب التطبيق
-    } else if (isIOS) {
-      setShowSteps(true);
+      try {
+        await deferred.prompt();
+        await deferred.userChoice;
+      } catch { /* المتصفح قد يرفض الإجبار — نفتح التطبيق على أي حال */ }
+      finish();
     } else {
-      setShowSteps(true);
+      setSteps(true);
     }
   };
 
-  if (dismissed || window.matchMedia('(display-mode: standalone)').matches) return null;
+  if (done || window.matchMedia('(display-mode: standalone)').matches) return null;
 
   return (
-    <div className="install-banner" role="dialog" aria-label="تثبيت التطبيق">
-      <div className="install-banner-icon"><Smartphone size={22} /></div>
-      <div className="install-banner-text">
-        <b>ثبّت «فواتير الخرج» على جهازك</b>
-        <span>اضغط زر التثبيت ثم اختر «إضافة / تثبيت» من نافذة المتصفح.</span>
-        {showSteps && isIOS && (
-          <span className="install-inline-steps">
-            <Share2 size={14} /> زر المشاركة في سفاري ← «إضافة إلى الشاشة الرئيسية» ← «إضافة»
-          </span>
+    <div className="install-gate">
+      <div className="install-card">
+        <img src="/logo.png" alt="شعار فواتير الفرع" className="gate-logo" />
+        <h2>ثبّت تطبيق «فواتير الفرع»</h2>
+        <p>التثبيت إلزامي قبل الدخول — ستجد الشعار على الشاشة الرئيسية وتعمل كل الميزات بشكل كامل.</p>
+
+        {steps || isIOS ? (
+          <>
+            <div className="install-steps">
+              <div><Share2 size={18} /> اضغط زر <b>المشاركة</b> في المتصفح</div>
+              <div><CheckCircle2 size={18} /> اختر <b>إضافة إلى الشاشة الرئيسية</b></div>
+              <div><Smartphone size={18} /> اضغط <b>إضافة</b> — سيظهر الشعار عندك</div>
+            </div>
+            <button className="btn btn-primary install-btn" onClick={finish}>
+              <CheckCircle2 size={18} /> تم التثبيت، فتح التطبيق
+            </button>
+          </>
+        ) : (
+          <button className="btn btn-primary install-btn" onClick={install}>
+            <Download size={19} /> تثبيت التطبيق الآن
+          </button>
         )}
-        {showSteps && !isIOS && (
-          <span className="install-inline-steps">إذا لم تظهر النافذة، استخدم قائمة المتصفح ← «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».</span>
-        )}
+        {!steps && !isIOS && <p className="install-note">ستظهر نافذة المتصفح — اختر «تثبيت» أو «إضافة».</p>}
+        <a className="install-help" href="/install.html">تعليمات التثبيت على الجوال</a>
       </div>
-      <button className="btn btn-primary btn-sm" onClick={install}>
-        <Download size={15} /> تثبيت
-      </button>
-      <button className="icon-btn" title="إغلاق والمتابعة" onClick={close}><X size={18} /></button>
     </div>
   );
 }

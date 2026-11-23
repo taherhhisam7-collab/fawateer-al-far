@@ -1,20 +1,17 @@
-from PIL import Image, ImageDraw
+from PIL import Image
 import os
 
+src = Image.open('public/logo-source.webp').convert('RGBA')
 os.makedirs('public', exist_ok=True)
-for s in (192, 512):
-    im = Image.new('RGBA', (s, s), (0, 0, 0, 0))
-    d = ImageDraw.Draw(im)
-    d.rounded_rectangle([0, 0, s - 1, s - 1], radius=int(s * 0.22), fill=(15, 118, 110, 255))
-    p, w = int(s * 0.22), int(s * 0.56)
-    d.rounded_rectangle([p, int(s * 0.17), p + w, int(s * 0.85)], radius=int(s * 0.035), fill=(255, 255, 255, 255))
-    l, r = p + int(w * 0.14), p + int(w * 0.86)
-    top, step = int(s * 0.28), int(s * 0.095)
-    for i in range(4):
-        d.rounded_rectangle([l, top + i * step, r, top + i * step + int(s * 0.026)],
-                            radius=int(s * 0.012), fill=(15, 118, 110, 255 if i < 3 else 170))
-    ax, ay, aw = int(s * 0.5), int(s * 0.62), int(s * 0.10)
-    d.polygon([(ax - aw, ay), (ax + aw, ay), (ax, ay + int(s * 0.13))], fill=(217, 119, 6, 255))
-    d.rectangle([ax - int(s * 0.022), int(s * 0.5), ax + int(s * 0.022), ay], fill=(217, 119, 6, 255))
-    im.save(f'public/icon-{s}.png')
-    print('icon', s)
+
+for size in (192, 512):
+    src.resize((size, size), Image.LANCZOS).save(f'public/icon-{size}.png')
+
+# نسخة maskable: الشعار داخل مساحة آمنة على خلفية لون الثيم
+mask = Image.new('RGBA', (512, 512), (15, 118, 110, 255))
+inner = src.resize((390, 390), Image.LANCZOS)
+mask.alpha_composite(inner, (61, 61))
+mask.save('public/icon-maskable-512.png')
+
+src.resize((320, 320), Image.LANCZOS).save('public/logo.png')
+print('icons ready')

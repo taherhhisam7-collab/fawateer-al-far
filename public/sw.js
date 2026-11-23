@@ -1,5 +1,5 @@
-const CACHE = 'fawateer-kharj-v2';
-const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png'];
+const CACHE = 'fawateer-kharj-v3';
+const SHELL = ['/', '/index.html', '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/logo.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -15,8 +15,18 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = new URL(req.url);
-  // لا يتم تخزين أي طلب API — البيانات يجب أن تكون دائماً حية
   if (req.method !== 'GET' || url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
+
+  // الـ manifest يجب أن يكون دائماً حياً — لا نقدّم نسخة قديمة منه
+  if (url.pathname === '/manifest.webmanifest') {
+    event.respondWith(fetch(req).then((res) => {
+      const copy = res.clone();
+      caches.open(CACHE).then((c) => c.put(req, copy));
+      return res;
+    }).catch(() => caches.match(req)));
+    return;
+  }
+
   if (req.mode === 'navigate') {
     event.respondWith(fetch(req).then((res) => {
       const copy = res.clone();

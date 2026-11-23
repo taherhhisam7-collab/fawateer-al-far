@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileSpreadsheet, Lock, Mail, LogIn, ShieldCheck, Store } from 'lucide-react';
+import { Lock, Mail, LogIn } from 'lucide-react';
 import { api } from '../api';
 
 export default function Login({ onLogin, notify }) {
@@ -17,7 +17,7 @@ export default function Login({ onLogin, notify }) {
   return (
     <div className="login-page">
       <form className="login-card" onSubmit={submit}>
-        <div className="login-logo"><FileSpreadsheet size={32} /></div>
+        <div className="login-logo login-logo-img"><img src="/logo.png" alt="شعار فواتير الفرع" /></div>
         <h1>تفاصيل فواتير الخرج</h1>
         <p className="sub">تسجيل الدخول — محاسب / كاشير</p>
         <div className="field" style={{ marginBottom: 14 }}>
@@ -39,10 +39,6 @@ export default function Login({ onLogin, notify }) {
         <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} disabled={busy}>
           <LogIn size={17} /> {busy ? 'جاري الدخول...' : 'دخول'}
         </button>
-        <div className="login-hint">
-          <ShieldCheck size={15} /> الحسابات تُنشأ من قِبل المحاسب فقط.<br />
-          <Store size={15} /> الكاشير يرى فرعه فقط ولا يدخل إلا فواتيره.
-        </div>
       </form>
     </div>
   );

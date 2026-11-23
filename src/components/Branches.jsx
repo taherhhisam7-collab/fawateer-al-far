@@ -3,7 +3,7 @@ import { Plus, Pencil, Trash2, Building2 } from 'lucide-react';
 import { api } from '../api';
 import { Modal } from './ui.jsx';
 
-const empty = { name: '', code: '', city: '', active: true };
+const empty = { name: '', code: '', city: 'المدينة المنورة', active: true };
 
 export default function Branches({ branches, reload, notify }) {
   const [editing, setEditing] = useState(null);

@@ -17,7 +17,7 @@ export default function Setup({ onDone, notify }) {
   return (
     <div className="login-page">
       <form className="login-card" onSubmit={submit}>
-        <div className="login-logo"><FileSpreadsheet size={32} /></div>
+        <div className="login-logo login-logo-img"><img src="/logo.png" alt="شعار فواتير الفرع" /></div>
         <h1>تفاصيل فواتير الخرج</h1>
         <p className="sub">الإعداد الأولي — إنشاء حساب المحاسب والفرع الرئيسي</p>
         <div className="form-grid">

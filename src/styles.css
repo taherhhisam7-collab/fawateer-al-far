@@ -45,6 +45,8 @@ a { color: var(--teal-700); }
 }
 .login-card h1 { margin: 0 0 6px; font-size: 24px; text-align: center; }
 .login-card .sub { text-align: center; color: var(--muted); margin-bottom: 26px; }
+.login-logo-img { padding: 0; overflow: hidden; background: transparent; }
+.login-logo-img img { width: 100%; height: 100%; object-fit: cover; border-radius: 18px; }
 .login-hint {
   margin-top: 22px; padding: 12px 14px; border-radius: 10px; background: var(--teal-50);
   border: 1px dashed var(--teal-600); color: var(--teal-800); font-size: 13px; line-height: 1.9;
@@ -225,6 +227,13 @@ textarea { resize: vertical; min-height: 70px; }
   .print-sign { display: flex; justify-content: space-between; margin-top: 22px; }
 }
 
+.splash {
+  position: fixed; inset: 0; z-index: 600; background: linear-gradient(135deg, #0b3b36, #0f766e);
+  display: grid; place-content: center; justify-items: center; gap: 14px; color: #fff;
+}
+.splash img { width: 128px; height: 128px; border-radius: 28px; box-shadow: 0 18px 40px rgba(0,0,0,.3); }
+.splash b { font-size: 22px; letter-spacing: .5px; }
+
 /* ---------- Install banner (non-blocking) ---------- */
 .install-banner {
   position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 120;
@@ -258,10 +267,12 @@ textarea { resize: vertical; min-height: 70px; }
   background: linear-gradient(135deg, var(--teal-600), var(--teal-800));
   display: grid; place-items: center; color: #fff;
 }
+.gate-logo { width: 96px; height: 96px; display: block; margin: 0 auto 14px; border-radius: 22px; box-shadow: 0 10px 24px rgba(15,118,110,.25); }
 .install-card h2 { margin: 0 0 10px; font-size: 22px; }
 .install-card p { color: var(--muted); line-height: 1.8; margin: 0 0 18px; }
 .install-btn { width: 100%; justify-content: center; padding: 13px; font-size: 16px; }
 .install-note { font-size: 12px; margin-top: 12px !important; }
+.install-help { display: inline-block; margin-top: 12px; font-size: 12px; color: var(--teal-700); font-weight: 700; }
 .install-steps { text-align: right; display: grid; gap: 10px; margin-bottom: 18px; }
 .install-steps div {
   display: flex; gap: 10px; align-items: center; background: var(--teal-50);

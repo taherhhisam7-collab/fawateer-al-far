@@ -6,6 +6,7 @@ import Login from './components/Login.jsx';
 import CashierApp from './components/CashierApp.jsx';
 import FinanceApp from './components/FinanceApp.jsx';
 import InstallGate from './components/InstallGate.jsx';
+import Splash from './components/Splash.jsx';
 
 export default function App() {
   const [checking, setChecking] = useState(true);
@@ -41,6 +42,7 @@ export default function App() {
 
   return (
     <div className="app-shell screen-only">
+      <Splash />
       <InstallGate />
       {user.role === 'cashier'
         ? <CashierApp user={user} onLogout={logout} notify={notify} />
