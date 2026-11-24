@@ -5,7 +5,7 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 JWT_SECRET = "fawateer-kharj-secret-change-me"
-PUBLIC_URL = "https://fawateer-al-far.uhdati.workers.dev"
+PUBLIC_URL = "https://fawateer-al-far.kharj.workers.dev"
 
 [[d1_databases]]
 binding = "DB"
