@@ -44,3 +44,12 @@ npm run build && npm start   # افتح http://localhost:3001
 Manifest + Service Worker + أيقونات. شريط تثبيت غير حاجز يظهر فور الفتح (المتصفحات لا تسمح بالإجبار بدون موافقة ضغطة واحدة).
 
 قاعدة البيانات: `server/data/fawateer.db`. غيّر `JWT_SECRET` في `server/index.js` قبل النشر.
+
+## ????? ?????? ??? Cloudflare Workers + D1
+
+- ??????: https://fawateer-al-far.uhdati.workers.dev
+- ??????: npm run build
+- ?????: npx wrangler deploy
+- ????? ????????: npx wrangler d1 migrations apply fawateer-db --remote
+- ????? ?????? SQLite ???????: node scripts/export-sqlite.js ?? npx wrangler d1 execute fawateer-db --remote --file migration_seed.sql
+
