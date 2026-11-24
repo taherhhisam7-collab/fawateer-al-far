@@ -1,4 +1,4 @@
-const CACHE = 'fawateer-kharj-v3';
+const CACHE = 'fawateer-kharj-v4';
 const SHELL = ['/', '/index.html', '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/logo.png'];
 
 self.addEventListener('install', (event) => {
