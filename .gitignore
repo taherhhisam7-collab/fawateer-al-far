@@ -5,3 +5,8 @@ server/data/*.db-wal
 *.log
 .DS_Store
 .env
+
+.wrangler/
+migration_seed.sql
+migration_seed.sql
+

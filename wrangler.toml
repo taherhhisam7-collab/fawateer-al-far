@@ -1,0 +1,20 @@
+﻿name = "fawateer-al-far"
+main = "src/worker/index.ts"
+compatibility_date = "2026-11-24"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+JWT_SECRET = "fawateer-kharj-secret-change-me"
+PUBLIC_URL = "https://fawateer-al-far.uhdati.workers.dev"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "fawateer-db"
+database_id = "f30173d8-e52a-408f-b09c-71cc4338d64e"
+
+[assets]
+directory = "dist"
+binding = "ASSETS"
+
+[triggers]
+crons = []

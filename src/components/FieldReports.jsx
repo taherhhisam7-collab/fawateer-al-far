@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { FileSpreadsheet, MessageCircle, BarChart3, RefreshCw } from 'lucide-react';
 import { api, download, query, shareWhatsApp } from '../api';
 import { FilterBar } from './ui.jsx';
@@ -25,39 +25,39 @@ export default function FieldReports({ branches, users, notify }) {
   }, [fields]);
 
   const share = () => shareWhatsApp([
-    `*تقرير حقل: ${report?.field?.label || field}*`, 'القيمة | عدد الفواتير | عدد السجلات | المجاميع',
+    `*ØªÙ‚Ø±ÙŠØ± Ø­Ù‚Ù„: ${report?.field?.label || field}*`, 'Ø§Ù„Ù‚ÙŠÙ…Ø© | Ø¹Ø¯Ø¯ Ø§Ù„ÙÙˆØ§ØªÙŠØ± | Ø¹Ø¯Ø¯ Ø§Ù„Ø³Ø¬Ù„Ø§Øª | Ø§Ù„Ù…Ø¬Ø§Ù…ÙŠØ¹',
     ...(report?.rows || []).map((r) => `${r.value} | ${r.forms} | ${r.occurrences} | ${r.sum === null ? '-' : r.sum}`),
   ]);
 
   return <>
     <div className="card">
-      <div className="card-header"><h3><BarChart3 size={18} /> تقرير مستقل لكل حقل</h3></div>
+      <div className="card-header"><h3><BarChart3 size={18} /> ØªÙ‚Ø±ÙŠØ± Ù…Ø³ØªÙ‚Ù„ Ù„ÙƒÙ„ Ø­Ù‚Ù„</h3></div>
       <div className="card-body">
         <div className="form-grid" style={{ marginBottom: 16 }}>
-          <div className="field"><label>اختر الحقل</label>
+          <div className="field"><label>Ø§Ø®ØªØ± Ø§Ù„Ø­Ù‚Ù„</label>
             <select value={field} onChange={(e) => setField(e.target.value)}>
               {groups.map(([g, list]) => <optgroup key={g} label={g}>
                 {list.map((f) => <option key={f.key} value={f.key}>{f.label}</option>)}
               </optgroup>)}
             </select></div>
-          <div className="field"><label>&nbsp;</label><button className="btn btn-primary" onClick={run}><RefreshCw size={15} /> تحديث التقرير</button></div>
+          <div className="field"><label>&nbsp;</label><button className="btn btn-primary" onClick={run}><RefreshCw size={15} /> ØªØ­Ø¯ÙŠØ« Ø§Ù„ØªÙ‚Ø±ÙŠØ±</button></div>
         </div>
         <FilterBar filters={filters} setFilters={setFilters} branches={branches} users={users} />
         <div className="btn-row" style={{ marginTop: 16 }}>
-          <button className="btn btn-light" onClick={() => download(`/exports/field.xlsx${query({ ...filters, field })}`, `field-report.xlsx`)
-            .catch((e) => notify(e.message, 'error'))}><FileSpreadsheet size={15} /> تصدير Excel</button>
-          <button className="btn btn-wa" onClick={share}><MessageCircle size={15} /> مشاركة واتساب</button>
-          {loading && <span className="muted">جاري التحميل...</span>}
+          <button className="btn btn-light" onClick={() => download(`/exports/field.csv${query({ ...filters, field })}`, `field-report.csv`)
+            .catch((e) => notify(e.message, 'error'))}><FileSpreadsheet size={15} /> ØªØµØ¯ÙŠØ± Excel</button>
+          <button className="btn btn-wa" onClick={share}><MessageCircle size={15} /> Ù…Ø´Ø§Ø±ÙƒØ© ÙˆØ§ØªØ³Ø§Ø¨</button>
+          {loading && <span className="muted">Ø¬Ø§Ø±ÙŠ Ø§Ù„ØªØ­Ù…ÙŠÙ„...</span>}
         </div>
       </div>
     </div>
     <div className="card">
-      <div className="card-header"><h3>{report?.field ? `نتائج: ${report.field.label}` : 'النتائج'}</h3>
-        <span className="muted">إجمالي القيم: {report?.rows?.length || 0}</span></div>
+      <div className="card-header"><h3>{report?.field ? `Ù†ØªØ§Ø¦Ø¬: ${report.field.label}` : 'Ø§Ù„Ù†ØªØ§Ø¦Ø¬'}</h3>
+        <span className="muted">Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù‚ÙŠÙ…: {report?.rows?.length || 0}</span></div>
       <div className="table-scroll"><table className="data-table">
-        <thead><tr><th>القيمة</th><th>عدد الفواتير</th><th>عدد السجلات</th><th>المجاميع</th><th>الفروع</th></tr></thead>
+        <thead><tr><th>Ø§Ù„Ù‚ÙŠÙ…Ø©</th><th>Ø¹Ø¯Ø¯ Ø§Ù„ÙÙˆØ§ØªÙŠØ±</th><th>Ø¹Ø¯Ø¯ Ø§Ù„Ø³Ø¬Ù„Ø§Øª</th><th>Ø§Ù„Ù…Ø¬Ø§Ù…ÙŠØ¹</th><th>Ø§Ù„ÙØ±ÙˆØ¹</th></tr></thead>
         <tbody>
-          {!report?.rows?.length && <tr><td colSpan="5" className="center muted">لا توجد بيانات</td></tr>}
+          {!report?.rows?.length && <tr><td colSpan="5" className="center muted">Ù„Ø§ ØªÙˆØ¬Ø¯ Ø¨ÙŠØ§Ù†Ø§Øª</td></tr>}
           {report?.rows?.map((r, i) => <tr key={i}>
             <td><b>{r.value}</b></td><td>{r.forms}</td><td>{r.occurrences}</td>
             <td>{r.sum === null ? '-' : r.sum}</td><td>{r.branches}</td>
@@ -67,3 +67,4 @@ export default function FieldReports({ branches, users, notify }) {
     </div>
   </>;
 }
+
