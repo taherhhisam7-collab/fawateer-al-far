@@ -32,6 +32,7 @@ function buildFilter(filters = {}, user) {
   const map = {
     branchId: 'i.branch_id = ?',
     userId: 'i.user_id = ?',
+    date: 'date(i.invoice_date) = date(?)',
     from: 'date(i.invoice_date) >= date(?)',
     to: 'date(i.invoice_date) <= date(?)',
     shift: "EXISTS (SELECT 1 FROM shift_rows s WHERE s.invoice_id=i.id AND s.shift_label=?)",
@@ -78,9 +79,16 @@ function buildFilter(filters = {}, user) {
     params.push(n, n);
   }
   if (filters.q) {
-    clauses.push('(i.code LIKE ? OR i.invoice_date LIKE ? OR i.day_name LIKE ? OR i.notes LIKE ? OR b.name LIKE ? OR u.full_name LIKE ?)');
+    clauses.push(`(i.code LIKE ? OR i.invoice_date LIKE ? OR i.day_name LIKE ? OR i.notes LIKE ?
+      OR b.name LIKE ? OR u.full_name LIKE ? OR EXISTS (
+        SELECT 1 FROM invoice_rows r WHERE r.invoice_id=i.id
+        AND (r.supplier LIKE ? OR r.notes LIKE ? OR r.invoices LIKE ? OR r.payments LIKE ? OR r.remaining LIKE ?))
+      OR EXISTS (
+        SELECT 1 FROM shift_rows s WHERE s.invoice_id=i.id AND
+        (s.total_cash LIKE ? OR s.network LIKE ? OR s.branch_expense LIKE ? OR s.net_cash LIKE ? OR s.total_amount LIKE ?))
+      OR i.totals LIKE ?)`);
     const q = `%${filters.q}%`;
-    params.push(q, q, q, q, q, q);
+    params.push(q, q, q, q, q, q, q, q, q, q, q, q, q, q, q, q, q);
   }
   return { where: clauses.length ? 'WHERE ' + clauses.join(' AND ') : '', params };
 }

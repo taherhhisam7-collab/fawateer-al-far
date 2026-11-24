@@ -12,7 +12,8 @@ import FieldReports from './FieldReports.jsx';
 import PrintableReport from './PrintableReport.jsx';
 import InvoiceForm from './InvoiceForm.jsx';
 import InvoiceDetailModal from './InvoiceDetailModal.jsx';
-import { Modal, FilterBar } from './ui.jsx';
+import { Modal } from './ui.jsx';
+import DatePicker from './DatePicker.jsx';
 import SupplierReport from './SupplierReport.jsx';
 import CashNetworkReport from './CashNetworkReport.jsx';
 import { fmtDate } from '../utils';
@@ -69,8 +70,8 @@ export default function FinanceApp({ user, onLogout, notify }) {
     notify(res.message);
     return res;
   };
-  const ActionIcons = ({ row }) => <div className="btn-row">
-    <button className="btn btn-light btn-sm" title="عرض" onClick={() => openDetail(row.id)}><Eye size={14} /></button>
+  const ActionIcons = ({ row }) => <div className="btn-row" onClick={(e) => e.stopPropagation()}>
+    <button className="btn btn-light btn-sm" title="عرض/تعديل" onClick={() => openEdit(row.id)}><Eye size={14} /></button>
     <button className="btn btn-light btn-sm" title="تعديل" onClick={() => openEdit(row.id)}><Pencil size={14} /></button>
     <button className="btn btn-danger btn-sm" title="حذف" onClick={() => remove(row.id)}><Trash2 size={14} /></button>
   </div>;
@@ -100,6 +101,48 @@ export default function FinanceApp({ user, onLogout, notify }) {
 
         {tab === 'entry' && <>
           <div className="card">
+            <div className="card-header"><h3>استعراض السجلات — كل الأيام ({records.length})</h3>
+              <div className="btn-row">
+                <button className="btn btn-primary btn-sm" onClick={() => loadRecords()}>بحث</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => { setEntryFilters({}); loadRecords({}); }}>إلغاء الفلتر</button>
+              </div></div>
+            <div className="card-body">
+              <div className="filter-bar">
+                <div className="field"><label>الفرع</label>
+                  <select value={entryFilters.branchId || ''} onChange={(e) => setEntryFilters((f) => ({ ...f, branchId: e.target.value }))}>
+                    <option value="">كل الفروع</option>
+                    {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                  </select></div>
+                <div className="field"><label>التاريخ</label>
+                  <DatePicker value={entryFilters.date} onChange={(v) => setEntryFilters((f) => ({ ...f, date: v }))} /></div>
+                <div className="field" style={{ gridColumn: 'span 2' }}><label>بحث عام (اسم، مبلغ، رقم…)</label>
+                  <input value={entryFilters.q || ''} onChange={(e) => setEntryFilters((f) => ({ ...f, q: e.target.value }))}
+                    placeholder="اكتب أي كلمة أو مبلغ" /></div>
+              </div>
+            </div>
+            <div className="table-scroll"><table className="data-table">
+              <thead><tr><th>الرقم</th><th>الفرع</th><th>الكاشير</th><th>التاريخ</th><th>اليوم</th>
+                <th>المورد</th><th>الفواتير</th><th>المدفوعات</th><th>إجمالي الدخل</th><th>الفرق</th><th>الإجراءات</th></tr></thead>
+              <tbody>
+                {records.length === 0 && <tr><td colSpan="11" className="center muted">لا توجد سجلات مطابقة للفلاتر</td></tr>}
+                {records.map((r) => {
+                  let t = {}; try { t = JSON.parse(r.totals || '{}'); } catch { /* ignore */ }
+                  return <tr key={r.id} style={{ cursor: 'pointer' }} onClick={() => openEdit(r.id)}>
+                    <td><b>{r.code}</b></td><td>{r.branch_name}</td><td>{r.user_name}</td>
+                    <td>{fmtDate(r.invoice_date)}</td><td>{r.day_name || '-'}</td>
+                    <td>{r.first_supplier || '-'}</td>
+                    <td>{t.listB?.invoices || '-'}</td><td>{t.listB?.payments || '-'}</td>
+                    <td>{t.shifts?.total_amount || '-'}</td>
+                    <td className={t.difference?.state === 'plus' ? 'diff-plus' : t.difference?.state === 'minus' ? 'diff-minus' : ''}>
+                      {t.difference?.text || '-'}</td>
+                    <td><ActionIcons row={r} /></td>
+                  </tr>;
+                })}
+              </tbody>
+            </table></div>
+          </div>
+
+          <div className="card">
             <div className="card-header">
               <h3><FileSpreadsheet size={18} /> تفاصيل فواتير الفرع — شاشة الإدخال</h3>
               <div className="btn-row">
@@ -113,37 +156,6 @@ export default function FinanceApp({ user, onLogout, notify }) {
                 submitLabel={editing ? 'حفظ التعديلات' : 'حفظ'}
                 onSaved={() => { setEditing(null); loadRecords(); }} />
             </div>
-          </div>
-
-          <div className="card">
-            <div className="card-header"><h3>استعراض السجلات — كل الأيام ({records.length})</h3>
-              <div className="btn-row">
-                <button className="btn btn-primary btn-sm" onClick={() => loadRecords()}>بحث</button>
-                <button className="btn btn-ghost btn-sm" onClick={() => { setEntryFilters({}); loadRecords({}); }}>مسح الفلاتر</button>
-              </div></div>
-            <div className="card-body">
-              <FilterBar filters={entryFilters} setFilters={setEntryFilters} branches={branches} users={users} />
-            </div>
-            <div className="table-scroll"><table className="data-table">
-              <thead><tr><th>الرقم</th><th>الفرع</th><th>الكاشير</th><th>التاريخ</th><th>اليوم</th>
-                <th>المورد</th><th>الفواتير</th><th>المدفوعات</th><th>إجمالي الدخل</th><th>الفرق</th><th>الإجراءات</th></tr></thead>
-              <tbody>
-                {records.length === 0 && <tr><td colSpan="11" className="center muted">لا توجد سجلات مطابقة للفلاتر</td></tr>}
-                {records.map((r) => {
-                  let t = {}; try { t = JSON.parse(r.totals || '{}'); } catch { /* ignore */ }
-                  return <tr key={r.id}>
-                    <td><b>{r.code}</b></td><td>{r.branch_name}</td><td>{r.user_name}</td>
-                    <td>{fmtDate(r.invoice_date)}</td><td>{r.day_name || '-'}</td>
-                    <td>{r.first_supplier || '-'}</td>
-                    <td>{t.listB?.invoices || '-'}</td><td>{t.listB?.payments || '-'}</td>
-                    <td>{t.shifts?.total_amount || '-'}</td>
-                    <td className={t.difference?.state === 'plus' ? 'diff-plus' : t.difference?.state === 'minus' ? 'diff-minus' : ''}>
-                      {t.difference?.text || '-'}</td>
-                    <td><ActionIcons row={r} /></td>
-                  </tr>;
-                })}
-              </tbody>
-            </table></div>
           </div>
         </>}
 

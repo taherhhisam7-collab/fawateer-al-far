@@ -5,12 +5,14 @@ import InvoiceForm from './InvoiceForm.jsx';
 import InvoiceDetailModal from './InvoiceDetailModal.jsx';
 import { fmtDate } from '../utils';
 import SupplierReport from './SupplierReport.jsx';
+import { Modal } from './ui.jsx';
 import { Wallet } from 'lucide-react';
 
 export default function CashierApp({ user, onLogout, notify }) {
   const [last, setLast] = useState(null);
   const [records, setRecords] = useState([]);
   const [detail, setDetail] = useState(null);
+  const [viewForm, setViewForm] = useState(null);
   const [view, setView] = useState('entry');
 
   const load = () => api('/invoices').then(setRecords).catch((e) => notify(e.message, 'error'));
@@ -28,7 +30,7 @@ export default function CashierApp({ user, onLogout, notify }) {
   };
 
   const open = async (id) => {
-    try { setDetail(await api(`/invoices/${id}`)); }
+    try { setViewForm(await api(`/invoices/${id}`)); }
     catch (e) { notify(e.message, 'error'); }
   };
 
@@ -70,7 +72,7 @@ export default function CashierApp({ user, onLogout, notify }) {
             {records.length === 0 && <tr><td colSpan="10" className="center muted">لا توجد حركات بعد — احفظ أول فاتورة لتظهر هنا</td></tr>}
             {records.map((r) => {
               let t = {}; try { t = JSON.parse(r.totals || '{}'); } catch { /* ignore */ }
-              return <tr key={r.id}>
+              return <tr key={r.id} style={{ cursor: 'pointer' }} onClick={() => open(r.id)}>
                 <td><b>{r.code}</b></td><td>{r.branch_name}</td>
                 <td>{fmtDate(r.invoice_date)}</td><td>{r.day_name || '-'}</td>
                 <td>{r.first_supplier || '-'}</td><td>{t.listB?.invoices || '0'}</td>
@@ -78,7 +80,7 @@ export default function CashierApp({ user, onLogout, notify }) {
                 <td>{t.shifts?.total_amount || '0'}</td>
                 <td className={t.difference?.state === 'plus' ? 'diff-plus' : t.difference?.state === 'minus' ? 'diff-minus' : ''}>
                   {t.difference?.text || '-'}</td>
-                <td><button className="btn btn-light btn-sm" title="عرض" onClick={() => open(r.id)}><Eye size={14} /></button></td>
+                <td><button className="btn btn-light btn-sm" title="عرض" onClick={(e) => { e.stopPropagation(); open(r.id); }}><Eye size={14} /></button></td>
               </tr>;
             })}
           </tbody>
@@ -87,6 +89,10 @@ export default function CashierApp({ user, onLogout, notify }) {
       </>}
     </div>
 
+    {viewForm && <Modal wide title={`عرض الفاتورة ${viewForm.code}`} onClose={() => setViewForm(null)}
+      footer={<button className="btn btn-ghost" onClick={() => setViewForm(null)}>إغلاق</button>}>
+      <InvoiceForm initial={viewForm} readOnly branchName={viewForm.branch_name} />
+    </Modal>}
     {detail && <InvoiceDetailModal invoice={detail} viewOnly notify={notify} onClose={() => setDetail(null)} />}
   </>;
 }

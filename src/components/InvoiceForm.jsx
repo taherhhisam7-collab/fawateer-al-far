@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Plus, Trash2, Send, Calculator, CalendarDays, Store, Sun, Moon } from 'lucide-react';
 import DatePicker from './DatePicker.jsx';
+import { fmtDate } from '../utils';
 
 const LIST_HEADERS = ['المورد أو بيان الصرف', 'الفواتير', 'المدفوعات', 'الباقي', 'ملاحظات'];
 const LIST_SUBS = ['', '(إجمالي مبلغ الفاتورة)', '(المبلغ المدفوع)', '(المتبقي من الفاتورة بعد خصم المدفوع)', ''];
@@ -36,7 +37,7 @@ function emptyForm(branchName) {
 }
 
 /* مكوّنات خارجية ثابتة — حتى لا يُعاد تركيب الإدخال عند كل حرف */
-function ListTable({ rows, totals, onCell, onDel, onAdd }) {
+function ListTable({ rows, totals, onCell, onDel, onAdd, readOnly }) {
   return (
     <div className="sheet-table">
       <table className="sheet-grid list-grid">
@@ -55,14 +56,15 @@ function ListTable({ rows, totals, onCell, onDel, onAdd }) {
             <tr key={i}>
               {LIST_KEYS.map((k, ki) => (
                 <td key={k} className={ki === 3 ? 'calc-col' : ''}>
-                  <input value={r[k] ?? ''} inputMode={ki === 1 || ki === 2 || ki === 3 ? 'decimal' : 'text'}
+                  <input value={r[k] ?? ''} disabled={readOnly}
+                    inputMode={ki === 1 || ki === 2 || ki === 3 ? 'decimal' : 'text'}
                     dir={ki === 1 || ki === 2 || ki === 3 ? 'ltr' : 'rtl'}
                     className={ki === 1 || ki === 2 || ki === 3 ? 'num-input' : ''}
                     onChange={(e) => onCell(i, k, e.target.value)} />
                 </td>
               ))}
-              <td className="act-col"><button type="button" className="sheet-del" title="حذف الصف"
-                onClick={() => onDel(i)}><Trash2 size={14} /></button></td>
+              <td className="act-col">{!readOnly && <button type="button" className="sheet-del" title="حذف الصف"
+                onClick={() => onDel(i)}><Trash2 size={14} /></button>}</td>
             </tr>
           ))}
         </tbody>
@@ -73,12 +75,12 @@ function ListTable({ rows, totals, onCell, onDel, onAdd }) {
           <td></td><td className="act-col"></td>
         </tr></tfoot>
       </table>
-      <button type="button" className="add-row" onClick={onAdd}><Plus size={13} /> إضافة صف</button>
+      {!readOnly && <button type="button" className="add-row" onClick={onAdd}><Plus size={13} /> إضافة صف</button>}
     </div>
   );
 }
 
-function ShiftTable({ rows, totals, onCell, onDel, onAdd }) {
+function ShiftTable({ rows, totals, onCell, onDel, onAdd, readOnly }) {
   return (
     <div className="sheet-table shift-block">
       <table className="sheet-grid shift-grid">
@@ -96,16 +98,16 @@ function ShiftTable({ rows, totals, onCell, onDel, onAdd }) {
                   {ki === 0 ? (
                     <div className="shift-label">
                       {r.shift_label === 'صباحي' ? <Sun size={15} /> : r.shift_label === 'مسائي' ? <Moon size={15} /> : null}
-                      <input value={r.shift_label} onChange={(e) => onCell(i, k, e.target.value)} />
+                      <input value={r.shift_label} disabled={readOnly} onChange={(e) => onCell(i, k, e.target.value)} />
                     </div>
                   ) : (
                     <input value={r[k] ?? ''} inputMode="decimal" dir="ltr" className="num-input"
-                      readOnly={ki >= 4} onChange={(e) => onCell(i, k, e.target.value)} />
+                      readOnly={ki >= 4 || readOnly} disabled={readOnly} onChange={(e) => onCell(i, k, e.target.value)} />
                   )}
                 </td>
               ))}
-              <td className="act-col"><button type="button" className="sheet-del" onClick={() => onDel(i)}>
-                <Trash2 size={14} /></button></td>
+              <td className="act-col">{!readOnly && <button type="button" className="sheet-del" onClick={() => onDel(i)}>
+                <Trash2 size={14} /></button>}</td>
             </tr>
           ))}
         </tbody>
@@ -115,12 +117,12 @@ function ShiftTable({ rows, totals, onCell, onDel, onAdd }) {
           <td className="act-col"></td>
         </tr></tfoot>
       </table>
-      <button type="button" className="add-row" onClick={onAdd}><Plus size={13} /> إضافة شفت</button>
+      {!readOnly && <button type="button" className="add-row" onClick={onAdd}><Plus size={13} /> إضافة شفت</button>}
     </div>
   );
 }
 
-export default function InvoiceForm({ initial, onSubmit, branchName, branches = [], allowBranch = false, onSaved, onError, preview = false, submitLabel = 'حفظ' }) {
+export default function InvoiceForm({ initial, onSubmit, branchName, branches = [], allowBranch = false, onSaved, onError, preview = false, readOnly = false, submitLabel = 'حفظ' }) {
   const [branchId, setBranchId] = useState(initial?.branch_id || '');
   const [error, setError] = useState('');
   const [form, setForm] = useState(() => initial ? {
@@ -215,8 +217,8 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
 
       <div className="sheet-actions-top">
         <span className="muted">{allowBranch ? 'المحاسب: اختر الفرع ثم احفظ' : 'الكاشير: الفرع مُثبّت بحسابك'}</span>
-        {preview
-          ? <button className="btn btn-ghost btn-sm" type="button" disabled><Send size={15} /> معاينة فقط</button>
+        {preview || readOnly
+          ? <button className="btn btn-ghost btn-sm" type="button" disabled><Send size={15} /> {readOnly ? 'قراءة فقط' : 'معاينة فقط'}</button>
           : <button className="btn sheet-submit-btn btn-sm" type="submit" disabled={busy}>
               <Send size={15} /> {busy ? 'جاري الحفظ...' : 'حفظ'}
             </button>}
@@ -226,7 +228,7 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
         {allowBranch ? (
           <div className="meta-card">
             <div className="meta-label"><Store size={15} /> الفرع /</div>
-            <select value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+            <select value={branchId} disabled={readOnly} onChange={(e) => setBranchId(e.target.value)}>
               <option value="">-- اختر الفرع --</option>
               {branches.filter((b) => b.active).map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
@@ -239,7 +241,8 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
         )}
         <div className="meta-card">
           <div className="meta-label"><CalendarDays size={15} /> التاريخ /</div>
-          <DatePicker value={form.invoice_date} onChange={(v) => setField('invoice_date', v)} />
+          {readOnly ? <input value={fmtDate(form.invoice_date)} disabled dir="ltr" /> :
+            <DatePicker value={form.invoice_date} onChange={(v) => setField('invoice_date', v)} />}
         </div>
         <div className="meta-card">
           <div className="meta-label"><Calculator size={15} /> اليوم /</div>
@@ -247,7 +250,7 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
         </div>
       </div>
 
-      <ShiftTable rows={form.shifts} totals={totals.shifts}
+      <ShiftTable rows={form.shifts} totals={totals.shifts} readOnly={readOnly}
         onCell={(i, k, v) => setCell('shifts', i, k, v)}
         onDel={(i) => delRow('shifts', i)} onAdd={() => addRow('shifts', () => blankShift())} />
 
@@ -266,7 +269,7 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
       </div>
       {error && <div className="sheet-error">{error}</div>}
 
-      <ListTable rows={form.listB} totals={totals.listB}
+      <ListTable rows={form.listB} totals={totals.listB} readOnly={readOnly}
         onCell={(i, k, v) => setCell('listB', i, k, v)}
         onDel={(i) => delRow('listB', i)} onAdd={() => addRow('listB', blank)} />
 
@@ -274,8 +277,8 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
         <div className="sheet-hint">
           <Calculator size={16} /> المتبقي = إجمالي الفاتورة − المدفوع، وصافي الكاش وإجمالي الدخل يُحسبان تلقائياً.
         </div>
-        {preview
-          ? <button className="btn btn-ghost" type="button" disabled><Send size={16} /> معاينة فقط</button>
+        {preview || readOnly
+          ? <button className="btn btn-ghost" type="button" disabled><Send size={16} /> {readOnly ? 'قراءة فقط' : 'معاينة فقط'}</button>
           : <button className="btn sheet-submit-btn" type="submit" disabled={busy}>
               <Send size={17} /> {busy ? 'جاري الحفظ...' : submitLabel}
             </button>}
