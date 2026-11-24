@@ -63,11 +63,12 @@ app.post('/api/setup', (req, res) => {
 /* ---------- Auth ---------- */
 app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body || {};
-  if (!email || !password) return res.status(400).json({ message: 'البريد وكلمة المرور مطلوبان' });
+  if (!email || !password) return res.status(400).json({ message: 'أدخل البريد الإلكتروني وكلمة المرور' });
   const u = db.prepare('SELECT * FROM users WHERE email=? COLLATE NOCASE').get(String(email).trim());
-  if (!u || !bcrypt.compareSync(String(password), u.password_hash))
-    return res.status(401).json({ message: 'البريد أو كلمة المرور غير صحيحة' });
-  if (!u.active) return res.status(403).json({ message: 'تم تعطيل هذا الحساب' });
+  if (!u) return res.status(401).json({ message: 'هذا البريد غير مسجّل في النظام — تواصل مع المحاسب' });
+  if (!bcrypt.compareSync(String(password), u.password_hash))
+    return res.status(401).json({ message: 'كلمة المرور غير صحيحة — تأكد من الحروف والأرقام' });
+  if (!u.active) return res.status(403).json({ message: 'تم تعطيل هذا الحساب — تواصل مع المحاسب' });
   const token = jwt.sign({ id: u.id, email: u.email, role: u.role, branch_id: u.branch_id }, SECRET, { expiresIn: '30d' });
   res.json({ token, user: withBranch(u) });
 });
@@ -274,6 +275,12 @@ app.get('/api/stats', auth, finance, (req, res) => {
 });
 app.get('/api/reports/suppliers', auth, (req, res) =>
   res.json(R.supplierReport(db, req.query, req.user)));
+app.get('/api/reports/cash-network', auth, (req, res) =>
+  res.json(R.cashNetworkReport(db, req.query, req.user)));
+app.get('/api/exports/cash-network.xlsx', auth, async (req, res) => {
+  const rep = R.cashNetworkReport(db, req.query, req.user);
+  await R.sendWorkbook(res, await R.workbookForCashNetwork(rep), `cash-network-${Date.now()}.xlsx`);
+});
 app.get('/api/exports/suppliers.xlsx', auth, async (req, res) => {
   const rows = R.supplierReport(db, req.query, req.user);
   await R.sendWorkbook(res, await R.workbookForSuppliers(rows), `suppliers-${Date.now()}.xlsx`);

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   LayoutDashboard, Building2, Users, FileBarChart, ListFilter, LogOut, KeyRound, ShieldCheck,
-  FileSpreadsheet, Eye, Pencil, Trash2, Plus, X, Wallet
+  FileSpreadsheet, Eye, Pencil, Trash2, Plus, X, Wallet, Landmark
 } from 'lucide-react';
 import { api, query } from '../api';
 import Dashboard from './Dashboard.jsx';
@@ -14,6 +14,7 @@ import InvoiceForm from './InvoiceForm.jsx';
 import InvoiceDetailModal from './InvoiceDetailModal.jsx';
 import { Modal, FilterBar } from './ui.jsx';
 import SupplierReport from './SupplierReport.jsx';
+import CashNetworkReport from './CashNetworkReport.jsx';
 import { fmtDate } from '../utils';
 
 const NAV = [
@@ -23,11 +24,12 @@ const NAV = [
   { id: 'users', label: 'المستخدمون', icon: Users },
   { id: 'reports', label: 'الفواتير', icon: FileBarChart },
   { id: 'suppliers', label: 'كشف الموردين', icon: Wallet },
+  { id: 'cashnet', label: 'كشف الصندوق والشبكة', icon: Landmark },
   { id: 'fields', label: 'التقارير', icon: ListFilter },
 ];
 const TITLES = {
   dashboard: 'لوحة التحكم', entry: 'تفاصيل فواتير الفرع', branches: 'إدارة الفروع', users: 'إدارة المستخدمين',
-  reports: 'الفواتير', suppliers: 'كشف الموردين', fields: 'التقارير', settings: 'إعدادات الحساب',
+  reports: 'الفواتير', suppliers: 'كشف الموردين', cashnet: 'كشف الصندوق والشبكة', fields: 'التقارير', settings: 'إعدادات الحساب',
 };
 
 export default function FinanceApp({ user, onLogout, notify }) {
@@ -151,6 +153,7 @@ export default function FinanceApp({ user, onLogout, notify }) {
           onPrint={setPrintData} onUpdate={() => { loadUsers(); loadRecords(); }}
           onEdit={openEdit} onDelete={remove} />}
         {tab === 'suppliers' && <SupplierReport branches={branches} notify={notify} />}
+        {tab === 'cashnet' && <CashNetworkReport branches={branches} users={users} notify={notify} />}
         {tab === 'fields' && <FieldReports branches={branches} users={users} notify={notify} />}
         {tab === 'settings' && <div className="card"><div className="card-header"><h3>تغيير كلمة المرور</h3></div>
           <div className="card-body" style={{ maxWidth: 420 }}>

@@ -144,6 +144,51 @@ async function workbookForSuppliers(rows, title = 'كشف حساب المورد�
   return wb;
 }
 
+function cashNetworkReport(db, filters, user) {
+  const invoices = listInvoices(db, filters, user);
+  const rows = [];
+  const totals = { cash: 0, network: 0, expense: 0, net: 0, income: 0 };
+  const shiftFilter = String(filters.shift || '').trim();
+  const incomeFilter = String(filters.income || '').trim();
+  const netFilter = String(filters.net || '').trim();
+  invoices.forEach((inv) => {
+    const shifts = db.prepare('SELECT * FROM shift_rows WHERE invoice_id=? ORDER BY row_index').all(inv.id);
+    shifts.forEach((s) => {
+      if (shiftFilter && s.shift_label !== shiftFilter) return;
+      if (incomeFilter === 'cash' && num(s.total_cash) <= 0) return;
+      if (incomeFilter === 'network' && num(s.network) <= 0) return;
+      if (netFilter === 'plus' && num(s.net_cash) <= 0) return;
+      if (netFilter === 'minus' && num(s.net_cash) >= 0) return;
+      const row = {
+        code: inv.code, branch: inv.branch_name, cashier: inv.user_name,
+        date: inv.invoice_date, day: inv.day_name, shift: s.shift_label,
+        cash: num(s.total_cash), network: num(s.network), expense: num(s.branch_expense),
+        net: num(s.net_cash), income: num(s.total_amount),
+      };
+      rows.push(row);
+      Object.keys(totals).forEach((k) => { totals[k] += row[k]; });
+    });
+  });
+  return { rows, totals };
+}
+
+async function workbookForCashNetwork(report) {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('كشف الصندوق والشبكة');
+  title(ws, 'A1:K1', 'كشف حساب الصندوق والشبكة');
+  ws.addRow([]);
+  ws.addRow(['رقم الفاتورة', 'الفرع', 'الكاشير', 'التاريخ', 'اليوم', 'الشفت',
+    'إجمالي الكاش', 'الشبكة', 'الفرع (الصرف)', 'صافي الكاش', 'إجمالي الدخل']);
+  head(ws.getRow(3));
+  report.rows.forEach((r) => ws.addRow([r.code, r.branch, r.cashier, r.date, r.day, r.shift,
+    r.cash, r.network, r.expense, r.net, r.income]));
+  const t = report.totals;
+  ws.addRow(['الإجمالي', '', '', '', '', '', t.cash, t.network, t.expense, t.net, t.cash + t.network]);
+  head(ws.getRow(ws.rowCount), TOTAL_FILL);
+  widths(ws, [18, 20, 18, 14, 13, 12, 15, 14, 16, 15, 16]); body(ws, 3);
+  return wb;
+}
+
 function fieldReport(db, fieldKey, filters, user) {
   const invoices = listInvoices(db, filters, user);
   const field = FIELDS.find((f) => f.key === fieldKey);
@@ -270,5 +315,5 @@ async function sendWorkbook(res, wb, filename) {
   await wb.xlsx.write(res); res.end();
 }
 module.exports = { FIELDS, LIST_HEADERS, SHIFT_HEADERS, buildFilter, listInvoices, getInvoice, fieldReport,
-  supplierReport, workbookForSuppliers,
+  supplierReport, workbookForSuppliers, cashNetworkReport, workbookForCashNetwork,
   workbookForInvoices, workbookForInvoice, workbookForField, sendWorkbook };
