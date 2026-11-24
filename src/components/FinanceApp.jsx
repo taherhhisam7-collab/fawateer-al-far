@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Building2, Users, FileBarChart, ListFilter, LogOut, KeyRound, ShieldCheck,
   FileSpreadsheet, Eye, Pencil, Trash2, Plus, X, Wallet
 } from 'lucide-react';
-import { api } from '../api';
+import { api, query } from '../api';
 import Dashboard from './Dashboard.jsx';
 import Branches from './Branches.jsx';
 import UsersView from './Users.jsx';
@@ -12,7 +12,7 @@ import FieldReports from './FieldReports.jsx';
 import PrintableReport from './PrintableReport.jsx';
 import InvoiceForm from './InvoiceForm.jsx';
 import InvoiceDetailModal from './InvoiceDetailModal.jsx';
-import { Modal } from './ui.jsx';
+import { Modal, FilterBar } from './ui.jsx';
 import SupplierReport from './SupplierReport.jsx';
 import { fmtDate } from '../utils';
 
@@ -35,6 +35,7 @@ export default function FinanceApp({ user, onLogout, notify }) {
   const [branches, setBranches] = useState([]);
   const [users, setUsers] = useState([]);
   const [records, setRecords] = useState([]);
+  const [entryFilters, setEntryFilters] = useState({});
   const [detail, setDetail] = useState(null);
   const [editing, setEditing] = useState(null);
   const [printData, setPrintData] = useState(null);
@@ -42,7 +43,8 @@ export default function FinanceApp({ user, onLogout, notify }) {
 
   const loadBranches = () => api('/branches').then(setBranches).catch((e) => notify(e.message, 'error'));
   const loadUsers = () => api('/users').then(setUsers).catch((e) => notify(e.message, 'error'));
-  const loadRecords = () => api('/invoices').then(setRecords).catch((e) => notify(e.message, 'error'));
+  const loadRecords = (f = entryFilters) =>
+    api(`/invoices${query(f)}`).then(setRecords).catch((e) => notify(e.message, 'error'));
   useEffect(() => { loadBranches(); loadUsers(); loadRecords(); }, []);
 
   const openDetail = async (id) => {
@@ -112,19 +114,29 @@ export default function FinanceApp({ user, onLogout, notify }) {
           </div>
 
           <div className="card">
-            <div className="card-header"><h3>السجلات المحفوظة ({records.length})</h3>
-              <button className="btn btn-ghost btn-sm" onClick={loadRecords}>تحديث</button></div>
+            <div className="card-header"><h3>استعراض السجلات — كل الأيام ({records.length})</h3>
+              <div className="btn-row">
+                <button className="btn btn-primary btn-sm" onClick={() => loadRecords()}>بحث</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => { setEntryFilters({}); loadRecords({}); }}>مسح الفلاتر</button>
+              </div></div>
+            <div className="card-body">
+              <FilterBar filters={entryFilters} setFilters={setEntryFilters} branches={branches} users={users} />
+            </div>
             <div className="table-scroll"><table className="data-table">
               <thead><tr><th>الرقم</th><th>الفرع</th><th>الكاشير</th><th>التاريخ</th><th>اليوم</th>
-                <th>فواتير (1)</th><th>إجمالي الدخل</th><th>الإجراءات</th></tr></thead>
+                <th>المورد</th><th>الفواتير</th><th>المدفوعات</th><th>إجمالي الدخل</th><th>الفرق</th><th>الإجراءات</th></tr></thead>
               <tbody>
-                {records.length === 0 && <tr><td colSpan="8" className="center muted">لا توجد سجلات بعد — احفظ أول نموذج ليظهر هنا</td></tr>}
+                {records.length === 0 && <tr><td colSpan="11" className="center muted">لا توجد سجلات مطابقة للفلاتر</td></tr>}
                 {records.map((r) => {
                   let t = {}; try { t = JSON.parse(r.totals || '{}'); } catch { /* ignore */ }
                   return <tr key={r.id}>
                     <td><b>{r.code}</b></td><td>{r.branch_name}</td><td>{r.user_name}</td>
                     <td>{fmtDate(r.invoice_date)}</td><td>{r.day_name || '-'}</td>
-                    <td>{t.listA?.invoices || '-'}</td><td>{t.shifts?.total_amount || '-'}</td>
+                    <td>{r.first_supplier || '-'}</td>
+                    <td>{t.listB?.invoices || '-'}</td><td>{t.listB?.payments || '-'}</td>
+                    <td>{t.shifts?.total_amount || '-'}</td>
+                    <td className={t.difference?.state === 'plus' ? 'diff-plus' : t.difference?.state === 'minus' ? 'diff-minus' : ''}>
+                      {t.difference?.text || '-'}</td>
                     <td><ActionIcons row={r} /></td>
                   </tr>;
                 })}
