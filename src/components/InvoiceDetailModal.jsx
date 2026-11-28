@@ -1,6 +1,7 @@
 import React from 'react';
-import { FileSpreadsheet, Printer, MessageCircle, Trash2, X, Pencil } from 'lucide-react';
-import { api, download, shareWhatsApp } from '../api';
+import { FileSpreadsheet, Printer, MessageCircle, Trash2, X, Pencil, Share2, ImageIcon, FileDown } from 'lucide-react';
+import { api, download } from '../api';
+import { shareInvoiceText, shareInvoiceImage, downloadInvoiceImage, downloadInvoicePdf } from '../lib/invoiceExport';
 import { Modal } from './ui.jsx';
 
 const L = ['المورد أو بيان الصرف', 'الفواتير', 'المدفوعات', 'الباقي', 'ملاحظات'];
@@ -23,32 +24,32 @@ function Table({ title, headers, keys, rows, totals }) {
 
 export default function InvoiceDetailModal({ invoice, onClose, onUpdate, onPrint, onEdit, notify, viewOnly = false }) {
   if (!invoice) return null;
-  const share = () => shareWhatsApp([
-    `*تفاصيل فواتير الفرع - ${invoice.code}*`,
-    `الفرع: ${invoice.branch_name}`, `الكاشير: ${invoice.user_name}`,
-    `التاريخ: ${invoice.invoice_date}`, `اليوم: ${invoice.day_name}`,
-    `إجمالي الفواتير (1): ${invoice.totals?.listA?.invoices || '-'}`,
-    `إجمالي الفواتير (2): ${invoice.totals?.listB?.invoices || '-'}`,
-    `إجمالي الدخل: ${invoice.totals?.shifts?.total_amount || '-'}`,
-  ]);
+  const share = () => shareInvoiceText(invoice);
   const remove = async () => {
     if (!window.confirm(`حذف النموذج ${invoice.code}؟`)) return;
     try { notify((await api(`/invoices/${invoice.id}`, { method: 'DELETE' })).message); onUpdate(); onClose(); }
     catch (e) { notify(e.message, 'error'); }
   };
 
+  const actions = <>
+    <button className="btn btn-wa" onClick={share}><MessageCircle size={15} /> مشاركة نص</button>
+    <button className="btn btn-light" onClick={() => shareInvoiceImage(invoice, notify).catch((e) => notify(e.message, 'error'))}><Share2 size={15} /> مشاركة صورة</button>
+    <button className="btn btn-light" onClick={() => downloadInvoicePdf(invoice).catch((e) => notify(e.message, 'error'))}><FileDown size={15} /> تحميل PDF</button>
+    <button className="btn btn-light" onClick={() => downloadInvoiceImage(invoice).catch((e) => notify(e.message, 'error'))}><ImageIcon size={15} /> تحميل صورة</button>
+    {onPrint && <button className="btn btn-light" onClick={() => onPrint(invoice)}><Printer size={15} /> طباعة</button>}
+  </>;
+
   return <Modal wide title={`تفاصيل الفاتورة ${invoice.code}`} onClose={onClose}
-    footer={viewOnly ? (
+    footer={<div className="btn-row" style={{ flexWrap: 'wrap' }}>
+      {actions}
+      {!viewOnly && <>
+        <button className="btn btn-light" onClick={() => download(`/exports/invoice/${invoice.id}.csv`, `fatura-${invoice.code}.csv`)
+          .catch((e) => notify(e.message, 'error'))}><FileSpreadsheet size={15} /> Excel</button>
+        {onEdit && <button className="btn btn-light" onClick={() => onEdit(invoice)}><Pencil size={15} /> تعديل</button>}
+        <button className="btn btn-danger btn-sm" onClick={remove}><Trash2 size={15} /> حذف</button>
+      </>}
       <button className="btn btn-ghost" onClick={onClose}><X size={15} /> إغلاق</button>
-    ) : <>
-      <button className="btn btn-light" onClick={() => download(`/exports/invoice/${invoice.id}.csv`, `fatura-${invoice.code}.csv`)
-        .catch((e) => notify(e.message, 'error'))}><FileSpreadsheet size={15} /> Excel</button>
-      <button className="btn btn-light" onClick={() => onPrint(invoice)}><Printer size={15} /> طباعة / PDF</button>
-      <button className="btn btn-wa" onClick={share}><MessageCircle size={15} /> واتساب</button>
-      {onEdit && <button className="btn btn-light" onClick={() => onEdit(invoice)}><Pencil size={15} /> تعديل</button>}
-      <button className="btn btn-danger btn-sm" onClick={remove}><Trash2 size={15} /> حذف</button>
-      <button className="btn btn-ghost" onClick={onClose}><X size={15} /> إغلاق</button>
-    </>}>
+    </div>}>
     <div className="form-grid" style={{ marginBottom: 8 }}>
       {[['الفرع', invoice.branch_name], ['الكاشير', invoice.user_name], ['التاريخ', invoice.invoice_date],
         ['اليوم', invoice.day_name], ['تاريخ الإضافة', invoice.created_at]].map(([k, v]) =>
