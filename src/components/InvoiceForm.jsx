@@ -182,11 +182,18 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
     const msgs = [];
     if (allowBranch && !branchId) msgs.push('• لازم تختار الفرع قبل الحفظ.');
     if (!form.invoice_date) msgs.push('• لازم تحدد التاريخ (يوم / شهر / سنة).');
-    const hasSupplier = form.listB.some((r) => String(r.supplier || '').trim());
-    if (!hasSupplier) msgs.push('• لازم تكتب اسم المورد في سطر المورد — ما نضيف ولا نغيّر الاسم.');
+    const hasShiftData = form.shifts.some((r) =>
+      ['total_cash', 'network', 'branch_expense'].some((k) => String(r[k] || '').trim()));
+    const hasSupplierData = form.listB.some((r) =>
+      ['supplier', 'invoices', 'payments', 'remaining', 'notes'].some((k) => String(r[k] || '').trim()));
+    if (!hasShiftData && !hasSupplierData) msgs.push('• لازم تعبي شفت بمبلغ أو سطر مورد قبل الحفظ.');
+    const amountWithoutSupplier = form.listB.some((r) =>
+      !String(r.supplier || '').trim() &&
+      ['invoices', 'payments'].some((k) => String(r[k] || '').trim()));
+    if (amountWithoutSupplier) msgs.push('• لازم تكتب اسم المورد في سطر المورد — ما نضيف ولا نغيّر الاسم.');
     const rowMissingSupplier = form.listB.findIndex((r) =>
       !String(r.supplier || '').trim() &&
-      ['invoices', 'payments', 'remaining', 'notes'].some((k) => String(r[k] || '').trim()));
+      ['notes'].some((k) => String(r[k] || '').trim()));
     if (rowMissingSupplier >= 0) msgs.push(`• الصف ${rowMissingSupplier + 1}: لازم تكتب اسم المورد قبل باقي البيانات.`);
     const payIdx = form.listB.findIndex((r) => String(r.supplier || '').trim() && !String(r.payments || '').trim());
     if (payIdx >= 0) msgs.push(`• الصف ${payIdx + 1}: لازم تعبي مبلغ المدفوع للمورد.`);
