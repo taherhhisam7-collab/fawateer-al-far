@@ -163,6 +163,8 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
     difference: (() => {
       const payments = sum(form.listB, 'payments');
       const expense = sum(form.shifts, 'branch_expense');
+      const hasExpense = form.shifts.some((r) => String(r.branch_expense || '').trim() !== '');
+      if (!hasExpense) return { payments, expense, diff: '', text: '', state: 'none' };
       const diff = num(payments) - num(expense);
       return {
         payments, expense, diff: String(diff),
@@ -199,7 +201,7 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
     setBusy(true);
     try {
       await onSubmit({
-        branch_id: branchId || undefined, invoice_date: form.invoice_date, day_name: form.day_name, notes: form.notes,
+        branch_id: branchId ? Number(branchId) : undefined, invoice_date: form.invoice_date, day_name: form.day_name, notes: form.notes,
         listA: [], listB: form.listB, shifts: form.shifts,
         totals: { ...totals, listA: { invoices: '', payments: '', remaining: '' } },
       });
@@ -260,7 +262,7 @@ export default function InvoiceForm({ initial, onSubmit, branchName, branches = 
           <span>المدفوعات: <b>{totals.difference.payments || '0'}</b></span>
           <span>الفرع (الصرف): <b>{totals.difference.expense || '0'}</b></span>
         </div>
-        <div className="diff-result">{totals.difference.text}</div>
+        {totals.difference.text && <div className="diff-result">{totals.difference.text}</div>}
       </div>
 
       <div className="sheet-banner second">

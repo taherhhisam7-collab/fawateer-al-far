@@ -29,7 +29,10 @@ const invoiceSchema = z.object({
   listA: z.array(invoiceRowSchema).default([]),
   listB: z.array(invoiceRowSchema).default([]),
   shifts: z.array(shiftRowSchema).default([]),
-  branch_id: z.number().int().positive().optional(),
+  branch_id: z.preprocess(
+    (v) => (v === '' || v === null || v === undefined ? undefined : Number(v)),
+    z.number().int().positive().optional(),
+  ),
 });
 
 export const invoiceRoutes = new Hono<{ Bindings: { DB: D1Database } }>();

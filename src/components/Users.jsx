@@ -15,7 +15,7 @@ export default function Users({ users, branches, reload, notify }) {
   const save = async () => {
     if (!form.branch_id) { notify('لازم تختار الفرع وتربط المستخدم به قبل الحفظ', 'error'); return; }
     try {
-      const body = { ...form, branch_id: form.branch_id };
+      const body = { ...form, branch_id: Number(form.branch_id) };
       const d = editing.id
         ? await api(`/users/${editing.id}`, { method: 'PUT', body })
         : await api('/users', { method: 'POST', body });

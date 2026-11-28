@@ -8,14 +8,20 @@ const userCreateSchema = z.object({
   full_name: z.string().min(1),
   password: z.string().min(6),
   role: z.enum(['accountant', 'cashier']),
-  branch_id: z.number().int().positive(),
+  branch_id: z.preprocess(
+    (v) => (v === '' || v === null || v === undefined ? undefined : Number(v)),
+    z.number().int().positive(),
+  ),
 });
 
 const userUpdateSchema = z.object({
   email: z.string().email().optional(),
   full_name: z.string().min(1).optional(),
   role: z.enum(['accountant', 'cashier']).optional(),
-  branch_id: z.number().int().positive().optional(),
+  branch_id: z.preprocess(
+    (v) => (v === '' || v === null || v === undefined ? undefined : Number(v)),
+    z.number().int().positive().optional(),
+  ),
   active: z.boolean().optional(),
   password: z.string().min(6).optional(),
 });
